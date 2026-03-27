@@ -1,0 +1,1765 @@
+"UTAddOn/textures/tex_test.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "UTAddOn/textures/tex_test2.png"
+    texture_2 "UTAddOn/textures/tex_test3.png"
+    texture_3 "UTAddOn/textures/tex_test4.png"
+}
+
+"UTAddOn/textures/tex0610_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "UTAddOn/textures/tex0610_04.png"
+    texture_2 "UTAddOn/textures/tex0610_03.png"
+    texture_3 "UTAddOn/textures/tex0610_02.png"
+    texture_4 "UTAddOn/textures/tex0610_01.png"
+}
+
+"UTAddOn/textures/tex_black.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "UTAddOn/textures/tex_green.png"
+    texture_2 "UTAddOn/textures/tex_yellow.png"
+    texture_3 "UTAddOn/textures/tex_red.png"
+    texture_4 "UTAddOn/textures/tex_dark_red.png"
+    texture_5 "UTAddOn/textures/hud/tex_ArmorEffect1.png"
+    texture_6 "UTAddOn/textures/hud/tex_ArmorEffect2.png"
+    texture_7 "UTAddOn/textures/hud/tex_DamageEffect1.png"
+    texture_8 "UTAddOn/textures/hud/tex_DamageEffect2.png"
+    texture_9 "UTAddOn/textures/hud/tex_DamageEffect3.png"
+}
+
+"UTAddOn/textures/hud/h_w_knife.png"
+{
+    animated 0
+    speed 0
+    
+    texture_1 "UTAddOn/textures/hud/h_w_bow.png"
+    texture_2 "UTAddOn/textures/hud/h_w_pistol.png"
+    texture_3 "UTAddOn/textures/hud/h_w_shotgun.png"
+    texture_4 "UTAddOn/textures/hud/h_w_autoshot.png"
+    texture_5 "UTAddOn/textures/hud/h_w_rifle.png"
+    texture_6 "UTAddOn/textures/hud/h_w_pulse.png"
+    texture_7 "UTAddOn/textures/hud/h_w_minigun.png"
+    texture_8 "UTAddOn/textures/hud/h_w_glauncher.png"
+    texture_9 "UTAddOn/textures/hud/h_w_alien.png"
+    texture_10 "UTAddOn/textures/hud/h_w_mlauncher.png"
+    texture_11 "UTAddOn/textures/hud/h_w_charge.png"
+    texture_12 "UTAddOn/textures/hud/h_w_fusion.png"
+    texture_13 "UTAddOn/textures/hud/h_w_scepter.png"
+    
+    texture_14 "UTAddOn/textures/hud/h_w_knife_bw.png"
+    texture_15 "UTAddOn/textures/hud/h_w_bow_bw.png"
+    texture_16 "UTAddOn/textures/hud/h_w_pistol_bw.png"
+    texture_17 "UTAddOn/textures/hud/h_w_shotgun_bw.png"
+    texture_18 "UTAddOn/textures/hud/h_w_autoshot_bw.png"
+    texture_19 "UTAddOn/textures/hud/h_w_rifle_bw.png"
+    texture_20 "UTAddOn/textures/hud/h_w_pulse_bw.png"
+    texture_21 "UTAddOn/textures/hud/h_w_minigun_bw.png"
+    texture_22 "UTAddOn/textures/hud/h_w_glauncher_bw.png"
+    texture_23 "UTAddOn/textures/hud/h_w_alien_bw.png"
+    texture_24 "UTAddOn/textures/hud/h_w_mlauncher_bw.png"
+    texture_25 "UTAddOn/textures/hud/h_w_charge_bw.png"
+    texture_26 "UTAddOn/textures/hud/h_w_fusion_bw.png"
+    texture_27 "UTAddOn/textures/hud/h_w_scepter_bw.png"
+    
+    texture_28 "UTAddOn/textures/hud/hud_frame.png"
+    texture_29 "UTAddOn/textures/hud/hud_frame_topper.png"
+    texture_30 "UTAddOn/textures/hud/hud_frame_bottomer.png"
+    texture_31 "UTAddOn/textures/hud/hud_frame_selected.png"
+    texture_32 "UTAddOn/textures/hud/hud_healthcross.png"
+    texture_33 "UTAddOn/textures/hud/hud_armoricon.png"
+    
+    texture_34 "UTAddOn/textures/hud/hud_greenbar.png"
+    texture_35 "UTAddOn/textures/hud/hud_yellowbar.png"
+    texture_36 "UTAddOn/textures/hud/hud_orangebar.png"
+    texture_37 "UTAddOn/textures/hud/hud_redbar.png"
+    
+    texture_38 "UTAddOn/textures/hud/num_0.png"
+    texture_39 "UTAddOn/textures/hud/num_1.png"
+    texture_40 "UTAddOn/textures/hud/num_2.png"
+    texture_41 "UTAddOn/textures/hud/num_3.png"
+    texture_42 "UTAddOn/textures/hud/num_4.png"
+    texture_43 "UTAddOn/textures/hud/num_5.png"
+    texture_44 "UTAddOn/textures/hud/num_6.png"
+    texture_45 "UTAddOn/textures/hud/num_7.png"
+    texture_46 "UTAddOn/textures/hud/num_8.png"
+    texture_47 "UTAddOn/textures/hud/num_9.png"
+}
+
+
+"textures/tex0001_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0001_01.png"
+    texture_2 "textures/tex0001_02.png"
+    texture_3 "textures/tex0001_03.png"
+    texture_4 "textures/tex0001_04.png"
+    texture_5 "textures/tex0001_05.png"
+    texture_6 "textures/tex0001_06.png"
+    texture_7 "textures/tex0001_07.png"
+    texture_8 "textures/tex0001_08.png"
+    texture_9 "textures/tex0001_09.png"
+    texture_10 "textures/tex0001_10.png"
+    texture_11 "textures/tex0001_11.png"
+    texture_12 "textures/tex0001_12.png"
+    texture_13 "textures/tex0001_13.png"
+    texture_14 "textures/tex0001_14.png"
+    texture_15 "textures/tex0001_15.png"
+    texture_16 "textures/tex0001_16.png"
+    texture_17 "textures/tex0001_17.png"
+    texture_18 "textures/tex0001_18.png"
+    texture_19 "textures/tex0001_19.png"
+}
+
+"textures/tex0002_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0002_01.png"
+    texture_2 "textures/tex0002_02.png"
+    texture_3 "textures/tex0002_03.png"
+    texture_4 "textures/tex0002_04.png"
+    texture_5 "textures/tex0002_05.png"
+    texture_6 "textures/tex0002_06.png"
+    texture_7 "textures/tex0002_07.png"
+    texture_8 "textures/tex0002_08.png"
+    texture_9 "textures/tex0002_09.png"
+    texture_10 "textures/tex0002_10.png"
+}
+
+"textures/tex0003_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0003_01.png"
+    texture_2 "textures/tex0003_02.png"
+    texture_3 "textures/tex0003_03.png"
+    texture_4 "textures/tex0003_04.png"
+    texture_5 "textures/tex0003_05.png"
+    texture_6 "textures/tex0003_06.png"
+    texture_7 "textures/tex0003_07.png"
+    texture_8 "textures/tex0003_08.png"
+    texture_9 "textures/tex0003_09.png"
+    texture_10 "textures/tex0003_10.png"
+    texture_11 "textures/tex0003_11.png"
+    texture_12 "textures/tex0003_12.png"
+    texture_13 "textures/tex0003_13.png"
+    texture_14 "textures/tex0003_14.png"
+    texture_15 "textures/tex0003_15.png"
+    texture_16 "textures/tex0003_16.png"
+    texture_17 "textures/tex0003_17.png"
+    texture_18 "textures/tex0003_18.png"
+    texture_19 "textures/tex0003_19.png"
+}
+
+"textures/tex0004_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0004_01.png"
+    texture_2 "textures/tex0004_02.png"
+    texture_3 "textures/tex0004_03.png"
+    texture_4 "textures/tex0004_04.png"
+}
+
+"textures/tex0014_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0014_01.png"
+    texture_2 "textures/tex0014_02.png"
+    texture_3 "textures/tex0014_03.png"
+    texture_4 "textures/tex0014_04.png"
+    texture_5 "textures/tex0014_05.png"
+    texture_6 "textures/tex0014_06.png"
+    texture_7 "textures/tex0014_07.png"
+    texture_8 "textures/tex0014_08.png"
+    texture_9 "textures/tex0014_09.png"
+    texture_10 "textures/tex0014_10.png"
+    texture_11 "textures/tex0014_11.png"
+    texture_12 "textures/tex0014_12.png"
+    texture_13 "textures/tex0014_13.png"
+    texture_14 "textures/tex0014_14.png"
+    texture_15 "textures/tex0014_15.png"
+    texture_16 "textures/tex0014_16.png"
+    texture_17 "textures/tex0014_17.png"
+    texture_18 "textures/tex0014_18.png"
+    texture_19 "textures/tex0014_19.png"
+}
+
+"textures/tex0015_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0015_01.png"
+    texture_2 "textures/tex0015_02.png"
+    texture_3 "textures/tex0015_03.png"
+    texture_4 "textures/tex0015_04.png"
+    texture_5 "textures/tex0015_05.png"
+    texture_6 "textures/tex0015_06.png"
+    texture_7 "textures/tex0015_07.png"
+    texture_8 "textures/tex0015_08.png"
+    texture_9 "textures/tex0015_09.png"
+    texture_10 "textures/tex0015_10.png"
+    texture_11 "textures/tex0015_11.png"
+    texture_12 "textures/tex0015_12.png"
+    texture_13 "textures/tex0015_13.png"
+    texture_14 "textures/tex0015_14.png"
+    texture_15 "textures/tex0015_15.png"
+    texture_16 "textures/tex0015_16.png"
+    texture_17 "textures/tex0015_17.png"
+    texture_18 "textures/tex0015_18.png"
+    texture_19 "textures/tex0015_19.png"
+}
+
+"textures/tex0025_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0025_01.png"
+    texture_2 "textures/tex0025_02.png"
+    texture_3 "textures/tex0025_03.png"
+    texture_4 "textures/tex0025_04.png"
+    texture_5 "textures/tex0025_05.png"
+    texture_6 "textures/tex0025_06.png"
+    texture_7 "textures/tex0025_07.png"
+    texture_8 "textures/tex0025_08.png"
+    texture_9 "textures/tex0025_09.png"
+    texture_10 "textures/tex0025_10.png"
+    texture_11 "textures/tex0025_11.png"
+    texture_12 "textures/tex0025_12.png"
+    texture_13 "textures/tex0025_13.png"
+    texture_14 "textures/tex0025_14.png"
+    texture_15 "textures/tex0025_15.png"
+    texture_16 "textures/tex0025_16.png"
+    texture_17 "textures/tex0025_17.png"
+    texture_18 "textures/tex0025_18.png"
+    texture_19 "textures/tex0025_19.png"
+}
+
+"textures/tex0032_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0032_01.png"
+    texture_2 "textures/tex0032_02.png"
+    texture_3 "textures/tex0032_03.png"
+    texture_4 "textures/tex0032_04.png"
+    texture_5 "textures/tex0032_05.png"
+    texture_6 "textures/tex0032_06.png"
+    texture_7 "textures/tex0032_07.png"
+    texture_8 "textures/tex0032_08.png"
+    texture_9 "textures/tex0032_09.png"
+    texture_10 "textures/tex0032_10.png"
+    texture_11 "textures/tex0032_11.png"
+    texture_12 "textures/tex0032_12.png"
+    texture_13 "textures/tex0032_13.png"
+    texture_14 "textures/tex0032_14.png"
+    texture_15 "textures/tex0032_15.png"
+    texture_16 "textures/tex0032_16.png"
+    texture_17 "textures/tex0032_17.png"
+    texture_18 "textures/tex0032_18.png"
+    texture_19 "textures/tex0032_19.png"
+}
+
+"textures/tex0050_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0050_01.png"
+    texture_2 "textures/tex0050_02.png"
+    texture_3 "textures/tex0050_03.png"
+    texture_4 "textures/tex0050_04.png"
+}
+
+"textures/tex0053_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0053_01.png"
+    texture_2 "textures/tex0053_02.png"
+    texture_3 "textures/tex0053_03.png"
+    texture_4 "textures/tex0053_04.png"
+    texture_5 "textures/tex0053_05.png"
+    texture_6 "textures/tex0053_06.png"
+    texture_7 "textures/tex0053_07.png"
+    texture_8 "textures/tex0053_08.png"
+    texture_9 "textures/tex0053_09.png"
+    texture_10 "textures/tex0053_10.png"
+    texture_11 "textures/tex0053_11.png"
+    texture_12 "textures/tex0053_12.png"
+    texture_13 "textures/tex0053_13.png"
+    texture_14 "textures/tex0053_14.png"
+    texture_15 "textures/tex0053_15.png"
+    texture_16 "textures/tex0053_16.png"
+    texture_17 "textures/tex0053_17.png"
+    texture_18 "textures/tex0053_18.png"
+    texture_19 "textures/tex0053_19.png"
+}
+
+"textures/tex0056_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0056_01.png"
+    texture_2 "textures/tex0056_02.png"
+    texture_3 "textures/tex0056_03.png"
+    texture_4 "textures/tex0056_04.png"
+    texture_5 "textures/tex0056_05.png"
+    texture_6 "textures/tex0056_06.png"
+}
+
+"textures/tex0093_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0093_01.png"
+    texture_2 "textures/tex0093_02.png"
+    texture_3 "textures/tex0093_03.png"
+    texture_4 "textures/tex0093_04.png"
+    texture_5 "textures/tex0093_05.png"
+}
+
+"textures/tex0102_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0102_01.png"
+    texture_2 "textures/tex0102_02.png"
+    texture_3 "textures/tex0102_03.png"
+    texture_4 "textures/tex0102_04.png"
+    texture_5 "textures/tex0102_05.png"
+    texture_6 "textures/tex0102_06.png"
+    texture_7 "textures/tex0102_07.png"
+}
+
+"textures/tex0104_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0104_01.png"
+    texture_2 "textures/tex0104_02.png"
+    texture_3 "textures/tex0104_03.png"
+    texture_4 "textures/tex0104_04.png"
+}
+
+"textures/tex0105_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0105_01.png"
+    texture_2 "textures/tex0105_02.png"
+    texture_3 "textures/tex0105_03.png"
+    texture_4 "textures/tex0105_04.png"
+    texture_5 "textures/tex0105_05.png"
+}
+
+"textures/tex0109_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0109_01.png"
+    texture_2 "textures/tex0109_02.png"
+    texture_3 "textures/tex0109_03.png"
+}
+
+"textures/tex0110_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0110_01.png"
+    texture_2 "textures/tex0110_02.png"
+    texture_3 "textures/tex0110_03.png"
+}
+
+"textures/tex0128_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0128_01.png"
+    texture_2 "textures/tex0128_02.png"
+}
+
+"textures/tex0129_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0129_01.png"
+}
+
+"textures/tex0130_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0130_01.png"
+}
+
+"textures/tex0131_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0131_01.png"
+}
+
+"textures/tex0132_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0132_01.png"
+}
+
+"textures/tex0133_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0133_01.png"
+    texture_2 "textures/tex0133_02.png"
+    texture_3 "textures/tex0133_03.png"
+    texture_4 "textures/tex0133_04.png"
+    texture_5 "textures/tex0133_05.png"
+}
+
+"textures/tex0134_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0134_01.png"
+    texture_2 "textures/tex0134_02.png"
+}
+
+"textures/tex0139_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0139_01.png"
+}
+
+"textures/tex0243_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0243_01.png"
+    texture_2 "textures/tex0243_02.png"
+    texture_3 "textures/tex0243_03.png"
+    texture_4 "textures/tex0243_04.png"
+    texture_5 "textures/tex0243_05.png"
+    texture_6 "textures/tex0243_06.png"
+    texture_7 "textures/tex0243_07.png"
+    texture_8 "textures/tex0243_08.png"
+    texture_9 "textures/tex0243_09.png"
+    texture_10 "textures/tex0243_10.png"
+    texture_11 "textures/tex0243_11.png"
+    texture_12 "textures/tex0243_12.png"
+    texture_13 "textures/tex0243_13.png"
+    texture_14 "textures/tex0243_14.png"
+    texture_15 "textures/tex0243_15.png"
+}
+
+"textures/tex0251_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0251_01.png"
+    texture_2 "textures/tex0251_02.png"
+    texture_3 "textures/tex0251_03.png"
+    texture_4 "textures/tex0251_04.png"
+    texture_5 "textures/tex0251_05.png"
+    texture_6 "textures/tex0251_06.png"
+    texture_7 "textures/tex0251_07.png"
+    texture_8 "textures/tex0251_08.png"
+    texture_9 "textures/tex0251_09.png"
+    texture_10 "textures/tex0251_10.png"
+    texture_11 "textures/tex0251_11.png"
+    texture_12 "textures/tex0251_12.png"
+    texture_13 "textures/tex0251_13.png"
+    texture_14 "textures/tex0251_14.png"
+    texture_15 "textures/tex0251_15.png"
+}
+
+"textures/tex0360_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0360_01.png"
+}
+
+"textures/tex0368_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0368_01.png"
+}
+
+"textures/tex0369_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0369_01.png"
+}
+
+"textures/tex0370_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0370_01.png"
+}
+
+"textures/tex0373_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0373_01.png"
+}
+
+"textures/tex0379_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0379_01.png"
+}
+
+"textures/tex0385_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0385_01.png"
+}
+
+"textures/tex0389_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0389_01.png"
+}
+
+"textures/tex0395_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0395_01.png"
+}
+
+"textures/tex0416_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0416_01.png"
+}
+
+"textures/tex0417_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0417_01.png"
+}
+
+"textures/tex0423_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0423_01.png"
+    texture_2 "textures/tex0423_02.png"
+    texture_3 "textures/tex0423_03.png"
+}
+
+"textures/tex0427_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0427_01.png"
+    texture_2 "textures/tex0427_02.png"
+    texture_3 "textures/tex0427_03.png"
+}
+
+"textures/tex0437_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0437_01.png"
+    texture_2 "textures/tex0437_02.png"
+    texture_3 "textures/tex0437_03.png"
+    texture_4 "textures/tex0437_04.png"
+}
+
+"textures/tex0438_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0438_01.png"
+    texture_2 "textures/tex0438_02.png"
+    texture_3 "textures/tex0438_03.png"
+    texture_4 "textures/tex0438_04.png"
+    texture_5 "textures/tex0438_05.png"
+}
+
+"textures/tex0453_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0453_01.png"
+}
+
+"textures/tex0461_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0461_01.png"
+    texture_2 "textures/tex0461_02.png"
+    texture_3 "textures/tex0461_03.png"
+    texture_4 "textures/tex0461_04.png"
+}
+
+"textures/tex0465_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0465_01.png"
+}
+
+"textures/tex0468_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0468_01.png"
+}
+
+"textures/tex0501_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0501_01.png"
+}
+
+"textures/tex0508_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0508_01.png"
+}
+
+"textures/tex0529_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0529_01.png"
+}
+
+"textures/tex0530_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0530_01.png"
+}
+
+"textures/tex0537_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0537_01.png"
+}
+
+"textures/tex0548_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0548_01.png"
+}
+
+"textures/tex0549_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0549_01.png"
+    texture_2 "textures/tex0549_02.png"
+    texture_3 "textures/tex0549_03.png"
+    texture_4 "textures/tex0549_04.png"
+    texture_5 "textures/tex0549_05.png"
+    texture_6 "textures/tex0549_06.png"
+    texture_7 "textures/tex0549_07.png"
+    texture_8 "textures/tex0549_08.png"
+    texture_9 "textures/tex0549_09.png"
+    texture_10 "textures/tex0549_10.png"
+}
+
+"textures/tex0550_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0550_01.png"
+}
+
+"textures/tex0555_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0555_01.png"
+    texture_2 "textures/tex0555_02.png"
+    texture_3 "textures/tex0555_03.png"
+    texture_4 "textures/tex0555_04.png"
+}
+
+"textures/tex0557_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0557_01.png"
+}
+
+"textures/tex0559_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0559_01.png"
+}
+
+"textures/tex0567_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0567_01.png"
+    texture_2 "textures/tex0567_02.png"
+    texture_3 "textures/tex0567_03.png"
+}
+
+"textures/tex0571_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0571_01.png"
+}
+
+"textures/tex0575_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0575_01.png"
+    texture_2 "textures/tex0575_02.png"
+    texture_3 "textures/tex0575_03.png"
+}
+
+"textures/tex0580_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0580_01.png"
+    texture_2 "textures/tex0580_02.png"
+    texture_3 "textures/tex0580_03.png"
+    texture_4 "textures/tex0580_04.png"
+    texture_5 "textures/tex0580_05.png"
+    texture_6 "textures/tex0580_06.png"
+    texture_7 "textures/tex0580_07.png"
+    texture_8 "textures/tex0580_08.png"
+    texture_9 "textures/tex0580_09.png"
+}
+
+"textures/tex0589_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0589_01.png"
+}
+
+"textures/tex0591_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0591_01.png"
+    texture_2 "textures/tex0591_02.png"
+    texture_3 "textures/tex0591_03.png"
+    texture_4 "textures/tex0591_04.png"
+}
+
+"textures/tex0600_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0600_01.png"
+    texture_2 "textures/tex0600_02.png"
+    texture_3 "textures/tex0600_03.png"
+    texture_4 "textures/tex0600_04.png"
+    texture_5 "textures/tex0600_05.png"
+}
+
+"textures/tex0601_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0601_01.png"
+    texture_2 "textures/tex0601_02.png"
+    texture_3 "textures/tex0601_03.png"
+    texture_4 "textures/tex0601_04.png"
+    texture_5 "textures/tex0601_05.png"
+    texture_6 "textures/tex0601_06.png"
+}
+
+"textures/tex0610_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0610_01.png"
+    texture_2 "textures/tex0610_02.png"
+    texture_3 "textures/tex0610_03.png"
+    texture_4 "textures/tex0610_04.png"
+}
+
+"textures/tex0612_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0612_01.png"
+    texture_2 "textures/tex0612_02.png"
+    texture_3 "textures/tex0612_03.png"
+    texture_4 "textures/tex0612_04.png"
+    texture_5 "textures/tex0612_05.png"
+    texture_6 "textures/tex0612_06.png"
+    texture_7 "textures/tex0612_07.png"
+    texture_8 "textures/tex0612_08.png"
+    texture_9 "textures/tex0612_09.png"
+    texture_10 "textures/tex0612_10.png"
+    texture_11 "textures/tex0612_11.png"
+    texture_12 "textures/tex0612_12.png"
+    texture_13 "textures/tex0612_13.png"
+}
+
+"textures/tex0615_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0615_01.png"
+}
+
+"textures/tex0617_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0617_01.png"
+}
+
+"textures/tex0629_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0629_01.png"
+}
+
+"textures/tex0630_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0630_01.png"
+}
+
+"textures/tex0631_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0631_01.png"
+}
+
+"textures/tex0632_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0632_01.png"
+}
+
+"textures/tex0638_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0638_01.png"
+    texture_2 "textures/tex0638_02.png"
+    texture_3 "textures/tex0638_03.png"
+}
+
+"textures/tex0642_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0642_01.png"
+}
+
+"textures/tex0643_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0643_01.png"
+}
+
+"textures/tex0645_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0645_01.png"
+}
+
+"textures/tex0649_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0649_01.png"
+    texture_2 "textures/tex0649_02.png"
+    texture_3 "textures/tex0649_03.png"
+}
+
+"textures/tex0655_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0655_01.png"
+}
+
+"textures/tex0657_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0657_01.png"
+}
+
+"textures/tex0659_00.png"
+{
+    animated 1
+    speed 60
+
+    texture_1 "textures/tex0659_01.png"
+    texture_2 "textures/tex0659_02.png"
+    texture_3 "textures/tex0659_03.png"
+    texture_4 "textures/tex0659_04.png"
+    texture_5 "textures/tex0659_05.png"
+    texture_6 "textures/tex0659_06.png"
+    texture_7 "textures/tex0659_07.png"
+    texture_8 "textures/tex0659_08.png"
+    texture_9 "textures/tex0659_09.png"
+    texture_10 "textures/tex0659_10.png"
+    texture_11 "textures/tex0659_11.png"
+    texture_12 "textures/tex0659_12.png"
+    texture_13 "textures/tex0659_13.png"
+    texture_14 "textures/tex0659_14.png"
+    texture_15 "textures/tex0659_15.png"
+    texture_16 "textures/tex0659_16.png"
+    texture_17 "textures/tex0659_17.png"
+    texture_18 "textures/tex0659_18.png"
+    texture_19 "textures/tex0659_19.png"
+}
+
+"textures/tex0661_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0661_01.png"
+}
+
+"textures/tex0663_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0663_01.png"
+}
+
+"textures/tex0674_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0674_01.png"
+}
+
+"textures/tex0675_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0675_01.png"
+}
+
+"textures/tex0678_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0678_01.png"
+    texture_2 "textures/tex0678_02.png"
+}
+
+"textures/tex0680_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0680_01.png"
+}
+
+"textures/tex0681_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0681_01.png"
+    texture_2 "textures/tex0681_02.png"
+}
+
+"textures/tex0682_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0682_01.png"
+}
+
+"textures/tex0683_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0683_01.png"
+}
+
+"textures/tex0684_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0684_01.png"
+}
+
+"textures/tex0690_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0690_01.png"
+}
+
+"textures/tex0691_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0691_01.png"
+    texture_2 "textures/tex0691_02.png"
+}
+
+"textures/tex0693_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0693_01.png"
+}
+
+"textures/tex0695_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0695_01.png"
+}
+
+"textures/tex0697_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0697_01.png"
+    texture_2 "textures/tex0697_02.png"
+}
+
+"textures/tex0698_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0698_01.png"
+}
+
+"textures/tex0699_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0699_01.png"
+    texture_2 "textures/tex0699_02.png"
+    texture_3 "textures/tex0699_03.png"
+}
+
+"textures/tex0702_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0702_01.png"
+}
+
+"textures/tex0703_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0703_01.png"
+}
+
+"textures/tex0708_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0708_01.png"
+}
+
+"textures/tex0709_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0709_01.png"
+}
+
+"textures/tex0710_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0710_01.png"
+    texture_2 "textures/tex0710_02.png"
+}
+
+"textures/tex0715_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0715_01.png"
+    texture_2 "textures/tex0715_02.png"
+    texture_3 "textures/tex0715_03.png"
+    texture_4 "textures/tex0715_04.png"
+    texture_5 "textures/tex0715_05.png"
+}
+
+"textures/tex0716_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0716_01.png"
+    texture_2 "textures/tex0716_02.png"
+    texture_3 "textures/tex0716_03.png"
+    texture_4 "textures/tex0716_04.png"
+    texture_5 "textures/tex0716_05.png"
+}
+
+"textures/tex0738_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0738_01.png"
+}
+
+"textures/tex0739_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0739_01.png"
+}
+
+"textures/tex0740_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0740_01.png"
+}
+
+"textures/tex0741_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0741_01.png"
+}
+
+"textures/tex0742_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0742_01.png"
+}
+
+"textures/tex0743_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0743_01.png"
+}
+
+"textures/tex0745_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0745_01.png"
+    texture_2 "textures/tex0745_02.png"
+    texture_3 "textures/tex0745_03.png"
+    texture_4 "textures/tex0745_04.png"
+    texture_5 "textures/tex0745_05.png"
+    texture_6 "textures/tex0745_06.png"
+    texture_7 "textures/tex0745_07.png"
+    texture_8 "textures/tex0745_08.png"
+}
+
+"textures/tex0750_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0750_01.png"
+}
+
+"textures/tex0751_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0751_01.png"
+}
+
+"textures/tex0752_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0752_01.png"
+}
+
+"textures/tex0753_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0753_01.png"
+}
+
+"textures/tex0754_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0754_01.png"
+}
+
+"textures/tex0755_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0755_01.png"
+    texture_2 "textures/tex0755_02.png"
+}
+
+"textures/tex0756_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0756_01.png"
+    texture_2 "textures/tex0756_02.png"
+}
+
+"textures/tex0760_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0760_01.png"
+    texture_2 "textures/tex0760_02.png"
+}
+
+"textures/tex0774_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0774_01.png"
+    texture_2 "textures/tex0774_02.png"
+    texture_3 "textures/tex0774_03.png"
+    texture_4 "textures/tex0774_04.png"
+    texture_5 "textures/tex0774_05.png"
+    texture_6 "textures/tex0774_06.png"
+    texture_7 "textures/tex0774_07.png"
+    texture_8 "textures/tex0774_08.png"
+    texture_9 "textures/tex0774_09.png"
+    texture_10 "textures/tex0774_10.png"
+    texture_11 "textures/tex0774_11.png"
+    texture_12 "textures/tex0774_12.png"
+    texture_13 "textures/tex0774_13.png"
+    texture_14 "textures/tex0774_14.png"
+    texture_15 "textures/tex0774_15.png"
+    texture_16 "textures/tex0774_16.png"
+    texture_17 "textures/tex0774_17.png"
+    texture_18 "textures/tex0774_18.png"
+    texture_19 "textures/tex0774_19.png"
+}
+
+"textures/tex0784_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0784_01.png"
+    texture_2 "textures/tex0784_02.png"
+    texture_3 "textures/tex0784_03.png"
+}
+
+"textures/tex0785_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0785_01.png"
+    texture_2 "textures/tex0785_02.png"
+    texture_3 "textures/tex0785_03.png"
+}
+
+"textures/tex0786_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0786_01.png"
+    texture_2 "textures/tex0786_02.png"
+    texture_3 "textures/tex0786_03.png"
+}
+
+"textures/tex0787_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0787_01.png"
+    texture_2 "textures/tex0787_02.png"
+    texture_3 "textures/tex0787_03.png"
+}
+
+"textures/tex0788_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0788_01.png"
+    texture_2 "textures/tex0788_02.png"
+    texture_3 "textures/tex0788_03.png"
+}
+
+"textures/tex0789_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0789_01.png"
+    texture_2 "textures/tex0789_02.png"
+    texture_3 "textures/tex0789_03.png"
+}
+
+"textures/tex0790_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0790_01.png"
+    texture_2 "textures/tex0790_02.png"
+    texture_3 "textures/tex0790_03.png"
+}
+
+"textures/tex0792_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0792_01.png"
+}
+
+"textures/tex0793_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0793_01.png"
+}
+
+"textures/tex0794_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0794_01.png"
+}
+
+"textures/tex0797_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0797_01.png"
+}
+
+"textures/tex0798_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0798_01.png"
+}
+
+"textures/tex0799_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0799_01.png"
+}
+
+"textures/tex0800_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0800_01.png"
+}
+
+"textures/tex0802_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0802_01.png"
+}
+
+"textures/tex0803_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0803_01.png"
+}
+
+"textures/tex0829_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0829_01.png"
+    texture_2 "textures/tex0829_02.png"
+    texture_3 "textures/tex0829_03.png"
+    texture_4 "textures/tex0829_04.png"
+    texture_5 "textures/tex0829_05.png"
+    texture_6 "textures/tex0829_06.png"
+    texture_7 "textures/tex0829_07.png"
+}
+
+"textures/tex0830_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0830_01.png"
+    texture_2 "textures/tex0830_02.png"
+    texture_3 "textures/tex0830_03.png"
+    texture_4 "textures/tex0830_04.png"
+    texture_5 "textures/tex0830_05.png"
+    texture_6 "textures/tex0830_06.png"
+    texture_7 "textures/tex0830_07.png"
+}
+
+"textures/tex0831_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0831_01.png"
+    texture_2 "textures/tex0831_02.png"
+    texture_3 "textures/tex0831_03.png"
+}
+
+"textures/tex0832_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0832_01.png"
+    texture_2 "textures/tex0832_02.png"
+    texture_3 "textures/tex0832_03.png"
+    texture_4 "textures/tex0832_04.png"
+    texture_5 "textures/tex0832_05.png"
+    texture_6 "textures/tex0832_06.png"
+    texture_7 "textures/tex0832_07.png"
+}
+
+"textures/tex0833_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0833_01.png"
+    texture_2 "textures/tex0833_02.png"
+    texture_3 "textures/tex0833_03.png"
+    texture_4 "textures/tex0833_04.png"
+    texture_5 "textures/tex0833_05.png"
+    texture_6 "textures/tex0833_06.png"
+    texture_7 "textures/tex0833_07.png"
+}
+
+"textures/tex0835_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0835_01.png"
+    texture_2 "textures/tex0835_02.png"
+    texture_3 "textures/tex0835_03.png"
+    texture_4 "textures/tex0835_04.png"
+    texture_5 "textures/tex0835_05.png"
+}
+
+"textures/tex0836_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0836_01.png"
+    texture_2 "textures/tex0836_02.png"
+    texture_3 "textures/tex0836_03.png"
+    texture_4 "textures/tex0836_04.png"
+    texture_5 "textures/tex0836_05.png"
+    texture_6 "textures/tex0836_06.png"
+    texture_7 "textures/tex0836_07.png"
+    texture_8 "textures/tex0836_08.png"
+    texture_9 "textures/tex0836_09.png"
+    texture_10 "textures/tex0836_10.png"
+    texture_11 "textures/tex0836_11.png"
+}
+
+"textures/tex0837_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0837_01.png"
+    texture_2 "textures/tex0837_02.png"
+    texture_3 "textures/tex0837_03.png"
+    texture_4 "textures/tex0837_04.png"
+    texture_5 "textures/tex0837_05.png"
+    texture_6 "textures/tex0837_06.png"
+    texture_7 "textures/tex0837_07.png"
+    texture_8 "textures/tex0837_08.png"
+    texture_9 "textures/tex0837_09.png"
+    texture_10 "textures/tex0837_10.png"
+    texture_11 "textures/tex0837_11.png"
+}
+
+"textures/tex0864_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0864_01.png"
+}
+
+"textures/tex0865_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0865_01.png"
+}
+
+"textures/tex0869_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0869_01.png"
+}
+
+"textures/tex0870_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0870_01.png"
+}
+
+"textures/tex0986_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0986_01.png"
+    texture_2 "textures/tex0986_02.png"
+}
+
+"textures/tex0987_00.png"
+{
+    animated 1
+    speed 30
+
+    texture_1 "textures/tex0987_01.png"
+    texture_2 "textures/tex0987_02.png"
+    texture_3 "textures/tex0987_03.png"
+    texture_4 "textures/tex0987_04.png"
+    texture_5 "textures/tex0987_05.png"
+    texture_6 "textures/tex0987_06.png"
+    texture_7 "textures/tex0987_07.png"
+    texture_8 "textures/tex0987_08.png"
+    texture_9 "textures/tex0987_09.png"
+    texture_10 "textures/tex0987_10.png"
+    texture_11 "textures/tex0987_11.png"
+    texture_12 "textures/tex0987_12.png"
+    texture_13 "textures/tex0987_13.png"
+    texture_14 "textures/tex0987_14.png"
+    texture_15 "textures/tex0987_15.png"
+    texture_16 "textures/tex0987_16.png"
+    texture_17 "textures/tex0987_17.png"
+    texture_18 "textures/tex0987_18.png"
+    texture_19 "textures/tex0987_19.png"
+}
+
+"textures/tex0988_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0988_01.png"
+    texture_2 "textures/tex0988_02.png"
+}
+
+"textures/tex0992_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0992_01.png"
+    texture_2 "textures/tex0992_02.png"
+    texture_3 "textures/tex0992_03.png"
+}
+
+"textures/tex0993_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex0993_01.png"
+}
+
+"textures/tex1020_00.png"
+{
+    animated 0
+    speed 0
+
+    texture_1 "textures/tex1020_01.png"
+    texture_2 "textures/tex1020_02.png"
+    texture_3 "textures/tex1020_03.png"
+    texture_4 "textures/tex1020_04.png"
+    texture_5 "textures/tex1020_05.png"
+    texture_6 "textures/tex1020_06.png"
+    texture_7 "textures/tex1020_07.png"
+    texture_8 "textures/tex1020_08.png"
+    texture_9 "textures/tex1020_09.png"
+    texture_10 "textures/tex1020_10.png"
+    texture_11 "textures/tex1020_11.png"
+    texture_12 "textures/tex1020_12.png"
+    texture_13 "textures/tex1020_13.png"
+}
+

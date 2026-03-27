@@ -1,0 +1,362 @@
+#include "UTAddOn/scripts/ut_helper.txt"
+#include "UTAddOn/scripts/ut_tools.txt"
+
+namespace UTAddOn
+{
+    
+enum UT_Sounds
+{
+    // KillingStreak
+    UT_SND_KS_AVERTED,
+    UT_SND_KS_DOUBLE_KILL,
+    UT_SND_KS_MULTI_KILL,
+    UT_SND_KS_MEGA_KILL,
+    UT_SND_KS_ULTRA_KILL,
+    UT_SND_KS_MONSTER_KILL,
+    UT_SND_KS_LUDICROUS_KILL,
+    UT_SND_KS_HOLY_SHIT,
+    UT_SND_KS_OWNAGE,
+
+    // KillingSpree
+    UT_SND_KP_SPREE,
+    UT_SND_KP_RAMPAGE,
+    UT_SND_KP_DOMINATING,
+    UT_SND_KP_UNSTOPPABLE,
+    UT_SND_KP_GODLIKE,
+    UT_SND_KP_WHICKED_SICK,
+
+    // Event
+    UT_SND_EV_LAST_SECOND_SAVE,
+    UT_SND_EV_DEAD,
+    UT_SND_EV_FIRST_BLOOD,
+    UT_SND_EV_UNREAL,
+
+    // Player
+    UT_SND_EV_DENIED,
+    UT_SND_EV_BOOSTER,
+    UT_SND_EV_ARMOR_HIT,
+    UT_SND_T_1,
+    UT_SND_T_2,
+    UT_SND_T_3,
+    UT_SND_T_4,
+    UT_SND_T_5,
+    UT_SND_T_6,
+    UT_SND_T_7,
+    UT_SND_T_8,
+    UT_SND_T_9,
+    UT_SND_T_10,
+    UT_SND_T_20,
+    UT_SND_T_30,
+    UT_SND_T_60
+}
+
+enum UT_SoundCategories
+{
+    UT_SND_CAT_KILLSTREAK,
+    UT_SND_CAT_KILLSPREE,
+    UT_SND_CAT_EVENT,
+    UT_SND_CAT_PLAYER,
+    UT_SND_CAT_SPECIAL,
+    UT_SND_CAT_ABOVE_SPECIAL
+}
+
+class UT_SoundData
+{
+    int soundId = -1;
+    int soundCategory = -1;
+    kStr filename;
+    int duration_ticks = 0;
+}
+
+class UT_SoundDict  // frak kDict
+{
+    kStr strCOMP = "Sound::SoundDict";
+
+    array<int> keys;
+    array<UT_SoundData> values;
+
+    UT_SoundDict()
+    {
+        Clear();
+    }
+
+    void Clear()
+    {
+        keys.resize(0);
+        values.resize(0);
+    }
+
+    int Length()
+    {
+        return keys.length();
+    }
+
+    void Add(int key, UT_SoundData value)
+    {
+        int idxElem = keys.find(key);
+        if(idxElem < 0)
+        {
+            keys.insertLast(key);
+            values.insertLast(value);
+        }
+        else
+        {
+            Warn(strCOMP, "Key '" + key + "' already exists!");
+        }
+    }
+
+    UT_SoundData Get(int key)
+    {
+        int idxElem = keys.find(key);
+        if(idxElem >= 0)
+        {
+            return values[idxElem];
+        }
+        else
+        {
+            Warn(strCOMP, "Key '" + key + "' not found!");
+            return UT_SoundData();
+        }
+    }
+
+}
+
+class UT_SoundManager
+{
+    kStr strCOMP = "Sound::SoundManager";
+
+    UT_SoundDict dict_snd;
+    int timer_killStreak = 0;
+    int timer_event = 0;
+    int timer_special = 0;
+    int timer_killSpree = 0;
+    UT_Queue_int queue_KillSpree;
+    UT_Queue_int queue_Event;
+
+    UT_SoundManager()
+    {
+        InitSoundData();
+    }
+
+    void InitSoundData()
+    {
+        dict_snd.Clear();
+        
+        // Killstreak
+        // Are played immediately
+        RegisterSound(UT_SND_KS_AVERTED, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_Averted.ksnd", 1.38f);
+        RegisterSound(UT_SND_KS_DOUBLE_KILL, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_Double_Kill.ksnd", 1.92f);
+        RegisterSound(UT_SND_KS_MULTI_KILL, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_MultiKill.ksnd", 2.19f);
+        RegisterSound(UT_SND_KS_MEGA_KILL, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_MegaKill.ksnd", 2.52f);
+        RegisterSound(UT_SND_KS_ULTRA_KILL, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_UltraKill.ksnd", 1.80f);
+        RegisterSound(UT_SND_KS_MONSTER_KILL, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_MonsterKill.ksnd", 2.74f);
+        RegisterSound(UT_SND_KS_LUDICROUS_KILL, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_LudicrousKill.ksnd", 2.72f);
+        RegisterSound(UT_SND_KS_HOLY_SHIT, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_HolyShit.ksnd", 2.24f);
+        RegisterSound(UT_SND_KS_OWNAGE, UT_SND_CAT_KILLSTREAK, "UTAddOn/sounds/KS_Ownage.ksnd", 2.49f);
+        
+        // Killspree
+        // Is delayed until killstreak and event sounds are finished
+        RegisterSound(UT_SND_KP_SPREE, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_KillingSpree.ksnd", 2.28f);
+        RegisterSound(UT_SND_KP_RAMPAGE, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_Rampage.ksnd", 2.02f);
+        RegisterSound(UT_SND_KP_DOMINATING, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_Dominating.ksnd", 1.70f);
+        RegisterSound(UT_SND_KP_UNSTOPPABLE, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_Unstoppable.ksnd", 1.94f);
+        RegisterSound(UT_SND_KP_GODLIKE, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_GodLike.ksnd", 1.74f);
+        RegisterSound(UT_SND_KP_WHICKED_SICK, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_WhickedSick.ksnd", 2.52f);
+        RegisterSound(UT_SND_EV_UNREAL, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/EV_Unreal.ksnd", 2.27f);
+        
+        // Event
+        // Is delayed until killstreak sounds are finished
+        RegisterSound(UT_SND_EV_DEAD, UT_SND_CAT_EVENT, "UTAddOn/sounds/EV_Humiliating_Defeat.ksnd", 1.96f);
+
+        // Special
+        // Supresses all sounds until playback has finished
+        RegisterSound(UT_SND_EV_LAST_SECOND_SAVE, UT_SND_CAT_SPECIAL, "UTAddOn/sounds/EV_Last_Second_Save.ksnd", 2.0f);//2.17f);
+        RegisterSound(UT_SND_EV_FIRST_BLOOD, UT_SND_CAT_SPECIAL, "UTAddOn/sounds/EV_First_Blood.ksnd", 2.0f);//2.29f);
+
+        // Above Special
+        // Is played immediately, ignoring special sounds
+        RegisterSound(UT_SND_EV_BOOSTER, UT_SND_CAT_ABOVE_SPECIAL, "UTAddOn/sounds/EV_Booster.ksnd", 1.65f);        
+
+        // Player
+        // Is played immediately (parallel to other sounds)
+        RegisterSound(UT_SND_EV_DENIED, UT_SND_CAT_PLAYER, "UTAddOn/sounds/EV_Denied.ksnd", 1.88f);
+        RegisterSound(UT_SND_EV_ARMOR_HIT, UT_SND_CAT_PLAYER, "UTAddOn/sounds/EV_Hit_Armor.ksnd", 0.51f);
+        RegisterSound(UT_SND_T_1, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_one.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_2, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_two.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_3, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_three.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_4, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_four.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_5, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_five.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_6, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_six.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_7, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_seven.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_8, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_eight.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_9, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_nine.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_10, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_ten.ksnd", 1.0f);
+        RegisterSound(UT_SND_T_20, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_20_seconds.ksnd", 1.50f);
+        RegisterSound(UT_SND_T_30, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_30_seconds.ksnd", 1.65f);
+        RegisterSound(UT_SND_T_60, UT_SND_CAT_PLAYER, "UTAddOn/sounds/T_60_seconds.ksnd", 1.63f);
+        
+        Log(strCOMP, "Registered " + dict_snd.Length() + " sounds!");
+    }
+
+    void RegisterSound(int soundId, int soundCat, kStr filename, float duration_s)
+    {
+        UT_SoundData data;
+        data.soundId = soundId;
+        data.soundCategory = soundCat;
+        data.filename = filename;
+        data.duration_ticks = int(duration_s * 60.0f);
+
+        dict_snd.Add(soundId, data);
+    }
+
+    void Tick()
+    {
+        // Update timers
+        if(timer_killStreak > 0)
+        {
+            timer_killStreak--;
+        }
+        if(timer_event > 0)
+        {
+            timer_event--;
+        }
+        if(timer_special > 0)
+        {
+            timer_special--;
+        }
+        if(timer_killSpree > 0)
+        {
+            timer_killSpree--;
+        }
+
+        // Play sounds stored in queues
+        if(timer_killStreak == 0)
+        {
+            // Play only if killstreak sound has finished
+
+            if(queue_Event.Size() > 0)
+            {
+                // Play event sounds of queue
+
+                int soundId = -1;
+                queue_Event.Pop(soundId);
+
+                UT_SoundData data = dict_snd.Get(soundId);
+                if(data.soundId < 0)
+                {
+                    Warn(strCOMP, "Unexpected: Key not found: " + soundId);
+                    return;
+                }
+
+                PlaySound_Event(data.filename, data.duration_ticks);
+            }
+            else if(timer_event == 0)
+            {
+                // Play KillSpree sounds only if event sounds have finished
+                // (and wait for other killspree sounds as well)
+
+                if(queue_KillSpree.Size() > 0 && timer_killSpree == 0)
+                {
+                    // Play killspree sounds of queue
+
+                    int soundId = -1;
+                    queue_KillSpree.Pop(soundId);
+
+                    UT_SoundData data = dict_snd.Get(soundId);
+                    if(data.soundId < 0)
+                    {
+                        Warn(strCOMP, "Unexpected: Key not found: " + soundId);
+                        return;
+                    }
+
+                    PlaySound_KillSpree(data.filename, data.duration_ticks);
+                }
+            }
+        }
+    }
+
+    void Request_PlaySound(int soundId)
+    {
+        UT_SoundData data = dict_snd.Get(soundId);
+        if(data.soundId < 0)
+        {
+            Warn(strCOMP, "Unexpected: Key not found: " + soundId);
+            return;
+        }
+
+        if(timer_special > 0 && data.soundCategory != UT_SND_CAT_ABOVE_SPECIAL)
+        {
+            Log(strCOMP, "Sound with id " + soundId + " supressed by special sound");
+            return;
+        }
+
+        switch(data.soundCategory)
+        {
+            case UT_SND_CAT_SPECIAL:
+                // Play sound immediately
+                PlaySound(data.filename);
+                // Set special timer
+                timer_special = data.duration_ticks;
+                break;
+
+            case UT_SND_CAT_KILLSTREAK:
+                // Play sound immediately and set timer
+                // -> But only if no special sound is currently running
+                PlaySound_KillStreak(data.filename, data.duration_ticks);
+                break;
+
+            case UT_SND_CAT_KILLSPREE:
+                // Put sound into queue for later playback
+                if(soundId == UT_SND_EV_UNREAL)
+                {
+                    queue_KillSpree.Push(soundId, true, true);
+                }
+                else
+                {
+                    queue_KillSpree.Push(soundId, true, false);
+                }
+                break;
+
+            case UT_SND_CAT_EVENT:
+                // Put sound into queue for later playback
+                queue_Event.Push(soundId);
+                break;
+
+            case UT_SND_CAT_PLAYER:
+            case UT_SND_CAT_ABOVE_SPECIAL:
+                // Play sound immediately
+                PlaySound(data.filename);
+                break;
+
+            default:
+                Warn(strCOMP, "Unknown sound category: " + data.soundCategory);
+        }
+
+    }
+
+    void PlaySound(kStr filename)
+    {
+        Game.PlaySound(filename);
+    }
+
+    void PlaySound_KillStreak(kStr filename, int nTicks)
+    {
+        Game.PlaySound(filename);
+        timer_killStreak = nTicks;
+    }
+
+    void PlaySound_KillSpree(kStr filename, int nTicks)
+    {
+        Game.PlaySound(filename);
+        timer_killSpree = nTicks;
+    }
+
+    void PlaySound_Event(kStr filename, int nTicks)
+    {
+        Game.PlaySound(filename);
+        timer_event = nTicks;
+    }
+
+}
+
+}   // NS: UTAddOn

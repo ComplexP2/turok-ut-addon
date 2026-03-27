@@ -1,0 +1,14 @@
+material surf_12_1234Y {
+    shader "progs/worldcolorfx"
+    fullbright
+    blend
+    cull back
+    sort translucent
+    depthtest
+    color_diffuse "1.000000 1.000000 1.000000 1.000000"
+
+    sampler "diffuse" 0 "UTAddOn/textures/hud/h_w_knife.png" {
+        filter      linear
+        wrap        repeat
+    }
+}

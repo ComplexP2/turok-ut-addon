@@ -1,0 +1,1220 @@
+#include "scripts/common.txt"
+
+#include "UTAddOn/scripts/ut_helper.txt"
+#include "UTAddOn/scripts/ut_tools.txt"
+#include "UTAddOn/scripts/ut_hud.txt"
+#include "UTAddOn/scripts/ut_soundmanager.txt"
+#include "UTAddOn/scripts/ut_turok_helper.txt"
+#include "UTAddOn/scripts/ut_console.txt"
+#include "UTAddOn/scripts/ut_settings.txt"
+
+namespace UTAddOn
+{
+
+// Information about the current game state
+class UT_GameData
+{
+    int ticks;
+    bool isActive;
+    int level;
+    bool wasHit;
+    int Kills;
+    int Health;
+    int Shield;
+    bool isInBossFight;
+    
+    UT_GameData()
+    {
+        Reset();
+    }
+
+    void Reset()
+    {
+        ticks = 0;
+        isActive = false;
+        level = 0;
+        wasHit = false;
+        Kills = 0;
+        Health = 0;
+        Shield = 0;
+        isInBossFight = false;
+    }
+}
+
+// Killstreak related data
+class UT_KillStreak
+{
+    int killStreak_count;
+    int killStreak_nKillsBegin;
+    float killStreak_LastKillTime;
+    bool isOnStreak;
+
+    UT_KillStreak()
+    {
+        Reset();
+    }
+    
+    void Reset()
+    {
+        killStreak_count = 0;
+        killStreak_nKillsBegin = 0;
+        killStreak_LastKillTime = 0;
+        isOnStreak = false;
+    }
+}
+
+// Killspree related data
+class UT_KillSpree
+{
+    int killSpree_nKillsBegin = 0;
+    int killSpree_remainder = 0;
+    int killSpree_count = 0;
+    int ownageCount = 0;
+
+    UT_KillSpree()
+    {
+        Reset();
+    }
+
+    void Reset()
+    {
+        killSpree_nKillsBegin = 0;
+        killSpree_remainder = 0;
+        killSpree_count = 0;
+        ownageCount = 0;
+    }
+}
+
+// Bossfight related data
+class UT_BossFight
+{
+    int prevBossHealth = 0;
+    kActor @pBoss;
+    float bossHealthItemSpawnDT = 1.0;
+    bool isBossDead = false;
+    int bossInitialHealth = 0;
+    float last_item_spawn_time = 0.0;
+
+    UT_BossFight()
+    {
+        Reset();
+    }
+
+    void Reset()
+    {
+        prevBossHealth = 0;
+        bossHealthItemSpawnDT = 1.0;
+        isBossDead = false;
+        bossInitialHealth = 0;
+        last_item_spawn_time = 0.0;
+    }
+}
+
+int g_killCounter = 0;
+UT_Queue_vec3 g_victimPosArray;
+
+void UT_Addon_Hook_EnemyKilled(kActor @killer, kActor @victim)
+{
+    /*if(killer.Type() == AT_PLAYER)
+    {*/
+        g_killCounter++;
+        g_victimPosArray.Push(victim.Origin() + kVec3(0,0,victim.Height()));
+    /*}
+    else
+    {
+        Game.PrintLine("Killer Type " + killer.Type(), 1);
+    }*/
+}
+
+
+
+// ================
+// UT_EventsHandler
+// ================
+class UT_EventsHandler
+{
+    kStr strCOMP = "Main";
+
+    UT_GameData curData_;
+    UT_GameData prevData_;
+    UT_KillStreak streakData_;
+    UT_KillSpree spreeData_;
+    UT_BossFight bossData_;
+
+    UT_Array_TempActor tempSpawnedHealthActorArray_;
+    
+    UT_Hud hud_;
+    UT_SoundManager soundManager_;
+
+    // General
+    float gameTime_ = 0;
+    kPuppet @pPuppet_;
+
+    // Damage/Heal
+    float damageInterval_ = 1.0;
+    float last_damage_or_heal_time_ = 0.0;
+    int damageInfliction_ = 0;
+
+    // Event detection
+    bool gameJustStarted_ = true;
+    bool spilledFirstBlood_ = false;
+    bool hasKilled_ = false;
+    bool gotHit_ = false;
+    
+
+    // Tests:
+    int debugCounter = 0;
+    kActor @test = null;
+    int testCounter = 0;
+
+
+    UT_EventsHandler()
+    {
+        Warn(strCOMP, "Constructor called");
+        Reset();
+        prevData_.isActive = true;
+        @test = null;
+    }
+
+
+    void Reset()
+    {
+
+        damageInterval_ = 1.0;
+
+        hasKilled_ = false;
+        gotHit_ = false;
+        damageInfliction_ = 0;
+
+        curData_.Reset();
+        prevData_.Reset();
+        streakData_.Reset();
+        spreeData_.Reset();
+        bossData_.Reset();
+
+        
+        g_saveData.InitSaveData();
+        g_saveData.LoadSaveData();
+    }
+
+    
+
+    void NewGame()
+    {
+        // TODO: Reset everything?
+    }
+
+    void SpawnEnemyTest()
+    {
+        if(debugCounter < 1 && gameTime_ > 10.0)
+        {
+            Warn("Spawning now ...");
+            debugCounter++;
+            kVec3 v = Player.Actor().Origin();
+            //Human_Grunt_Soldier
+            kActor @actor = ActorFactory.Spawn("Human_Grunt_Soldier", v.x, v.y, v.z, 0.0f, Player.Actor().SectorIndex());
+            actor.Scale().Set(0.5f, 0.5f, 0.5f);
+            //AF_STATIONARY | AF_WOUNDEDMORTALLY
+            //actor.Flags() |= (AF_ALWAYSACTIVE | AF_CASTSHADOW | AF_SOLID);
+            //actor.Flags() &= ~(AF_NONSHOOTABLE|AF_INVINCIBLE);
+            actor.Flags() = 524288;//1073889280;
+            Log("Actor flags: " + actor.Flags());
+            //actor.ModelVariation() = Math::RandMax(GV_DEMON_LORD + 1);
+            //SetGruntTextures(actor);
+            // =======
+        }
+        /*if(debugCounter >= 1)
+        {
+            testCounter++;
+            if(testCounter > 15)
+            {
+                testCounter = 0;
+                // do smth
+            }
+        }*/
+    }
+
+
+    void DealDamage(int damage)
+    {
+        SpawnEnemyTest();
+
+        if(!g_gamePlaySettings.enableDamage) return;
+
+        Log(strCOMP, "Health: " + pPuppet_.Health() + " | Armor: " + Player.Armor());
+
+        damageInfliction_ = damage;
+        Log(strCOMP, "Deal damage: " + damage);
+        pPuppet_.CastToActor().InflictGenericDamage(pPuppet_.CastToActor(), damage);
+    }
+
+
+    void Heal(int health, int armor, int life = 0)
+    {
+        if(!g_gamePlaySettings.enableHealing)
+        {
+            return;
+        }
+
+        int armorc = armor * 3;
+        int maxHealArmor = g_saveData.maxHealArmor * 3;
+        int maxHealHealth = g_saveData.maxHealHealth;
+
+        if(health > 0)
+        {
+            if(pPuppet_.Health() + health > maxHealHealth)
+            {
+                if(pPuppet_.Health() < maxHealHealth)
+                {
+                    // Fill up health to max and put rest into armor
+                    pPuppet_.Health() = maxHealHealth;
+                    Heal(0, pPuppet_.Health() + health - maxHealHealth);
+                }
+                else
+                {
+                    // Put all health into armor
+                    Heal(0, health);
+                }
+            }
+            else
+            {
+                // Put all health into health
+                pPuppet_.Health() += health;
+            }
+        }
+        
+        if(armorc > 0 && g_gamePlaySettings.enableArmorHealing)
+        {
+            
+            if(Player.Armor() + armorc > maxHealArmor)
+            {
+                if(Player.Armor() < maxHealArmor)
+                {
+                    // Fill armor to max and spawn a lifeforce
+                    Player.Armor() = maxHealArmor;
+                    UTAddOn::Turok::SpawnLifeForce();
+                }
+                else
+                {
+                    // Spawn a lifeforce
+                    UTAddOn::Turok::SpawnLifeForce();
+                }
+            }
+            else
+            {
+                // Put all health into armor
+                Player.Armor() += armorc;
+            }
+        }
+        
+    }
+
+    void MapLoaded(int mapId)
+    {
+        DisplayConsoleHint();
+
+        Warn("Loaded map with id: " + mapId);
+        Warn("Level = " + UTAddOn::Turok::GetLevelId());
+        g_saveData.LoadSaveData();
+        ChangeDifficultySetting(g_saveData.difficulty);
+        
+        hud_.Invalidate(true);
+
+        if(test !is null)
+        {
+            @test = null;
+            Warn("@test = null");
+        }
+    }
+
+    void Tick()
+    {
+        @pPuppet_ = Player.Actor();
+
+        prevData_ = curData_;   // Update prevData_
+        UpdateGameData();       // Update curData_
+
+        ProcessInGame();
+
+        soundManager_.Tick();   // Update sound queues
+
+        
+        if(curData_.level == 0) return;
+
+        if(false && test !is null)
+        {
+            //Warn("Tick test");
+            kVec3 vx(1,0,0);
+            kVec3 vy(0,1,0);
+            kVec3 vz(0,0,1);
+            kVec3 vPosUI = vy * 150;
+            //vpos += vx * 50;
+
+            kQuat qRotPlayerActor = Player.Actor().Rotation();
+            kQuat qPitch = kQuat(pPuppet_.RecoilPitch(), kVec3(1,0,0));
+            //kQuat qPitch = kQuat(0, kVec3(1,0,0));
+
+            // Vector in "look forward" direction
+            kVec3 vdir = vPosUI * (qRotPlayerActor * qPitch);
+
+            kVec3 vPlayerActor = Player.Actor().Origin();
+
+            // Target position in world coords
+            kVec3 vPos = vPlayerActor;
+            //kVec3 pPos = pPuppet_.Actor().GetTransformedVector(kVec3(0,0,pPuppet_.ViewHeight()));
+            vPos += vz * (pPuppet_.ViewHeight() + pPuppet_.LandingViewOffset()); // Originate from eye position
+            vPos = vPos + vdir;
+
+            // TEST
+            //vPos = Player.Actor().GetTransformedVector((vPosUI + vz * pPuppet_.ViewHeight())*1);
+            //Log("vPos: " + Str(vPos));
+            //Log("Origin: " + Str(Player.Actor().Origin()));
+            //vdir = vPosUI * qRotPlayerActor;
+            //vPos = vPlayerActor + vz * pPuppet_.ViewHeight() + vdir;
+            //Log("Locked: " + Player.Locked()); // true during cutscenes? YES
+            // END TEST
+            
+            test.SetPosition(vPos);
+            //kVec3 pos = test.Origin();
+            //test.Rotation() = Player.Actor().Rotation();
+            test.Rotation() = qRotPlayerActor * kQuat(-Math::pi/2, kVec3(1,0,0));
+            //Log("Position: " + Str(pos));
+            //Log("Yaw: " + Player.Actor().Yaw() + " >> Quat: " + Str(Player.Actor().Rotation()));
+            /*testCounter++;
+            if(testCounter > 15)
+            {
+                testLifeCounter = 0;*/
+                ////Player.Actor().SpawnFx("fx/shockwave.kfx", kVec3(0,50,50));// kQuat(Math::pi/2, kVec3(0,1,0)));
+                //Game.SpawnFx("fx/shockwave.kfx", Player.Actor(), vPos, kQuat(0, kVec3(0,0,1)));
+            /*}*/
+
+        }
+
+        if(false)
+        {
+            if(test is null)
+            {
+                kVec3 v = Player.Actor().Origin();
+                //v = kVec3(-1840.0, -3300.0, 400.0);
+                v = kVec3(0.0, 0.0, 0.0);
+                Warn("Spawning Test ...");
+                @test = ActorFactory.Spawn("UTA_Plane", v.x, v.y, v.z, 0, Player.Actor().SectorIndex());
+                test.Scale().Set(0.048f, 0.027f, 1.0f);
+                //test.Flags() = 1073889280;
+                Log("Spawned at position: " + Str(v));
+                Log("Spawned at sector: " + test.SectorIndex());
+                test.RenderModel().SetTexture(0, 1);
+            }
+            else
+            {
+                test.Rotation() = kQuat(Math::pi/2, kVec3(1,0,0));
+                //Log("Pos: " + Str(Player.Actor().Origin()));
+            }
+        }
+    }
+
+    void GotDamage(int damage)
+    {
+        if(damage > 0)
+        {
+            Log(strCOMP, "Got Damage: " + damage);
+            if(damage != damageInfliction_)
+            {
+                damageInfliction_ = 0;
+                gotHit_ = true;
+            }
+
+            if(prevData_.Shield > 0)
+            {
+                soundManager_.Request_PlaySound(UT_SND_EV_ARMOR_HIT);
+                if(g_gamePlaySettings.enableHud)
+                {
+                    if(damage >= 15)
+                    {
+                        hud_.StartAnimation_ArmorHit(1);
+                    }
+                    else
+                    {
+                        hud_.StartAnimation_ArmorHit(0);
+                    }
+                }
+            }
+            else
+            {
+                if(g_gamePlaySettings.enableHud)
+                {
+                    if(damage >= 5)
+                    {
+                        hud_.StartAnimation_Hit(2);
+                    }
+                    else if(damage >= 3)
+                    {
+                        hud_.StartAnimation_Hit(1);
+                    }
+                    else
+                    {
+                        hud_.StartAnimation_Hit(0);
+                    }
+                }
+            }
+        }
+
+    }
+
+    void UpdateGameData()
+    {
+        curData_.ticks = PlayLoop.Ticks();
+        curData_.Kills = g_killCounter;
+        curData_.level = UTAddOn::Turok::GetLevelId();
+        curData_.isActive = UTAddOn::Turok::IsInGame(curData_.level);
+        curData_.Health = pPuppet_.Health();
+        curData_.Shield = Player.Armor();
+        curData_.wasHit = gotHit_;
+        gotHit_ = false;
+
+        gameTime_ = PlayLoop.Ticks() * GAME_DELTA_TIME;
+
+        gameJustStarted_ = (curData_.isActive && !prevData_.isActive);
+        if(gameJustStarted_) Warn(strCOMP, "Game just startet!");
+        // -> Doesnt work on load, because prevData_.isActive does not become false! Solution?
+
+        bool isDefaultBossLevel = UTAddOn::Turok::IsBossFight(curData_.level);
+        curData_.isInBossFight = isDefaultBossLevel && UTAddOn::Turok::DetectBossFight(bossData_.pBoss);
+        
+    }
+
+
+    void ProcessBossFight()
+    {
+        if(!prevData_.isInBossFight && curData_.isInBossFight)
+        {
+            Warn(strCOMP, "Entered Boss Fight!");
+            bossData_.bossHealthItemSpawnDT = 1.0f;  // Init timer to default value
+            bossData_.bossInitialHealth = bossData_.pBoss.Health();
+        }
+
+        if(!curData_.isInBossFight)
+        {
+            if(prevData_.isInBossFight)
+            {
+                // Despawn everything that is left
+                if(tempSpawnedHealthActorArray_.Size() > 0)
+                {
+                    tempSpawnedHealthActorArray_.Clear();
+                }
+            }
+        }
+        else
+        {
+
+            int bossType = bossData_.pBoss.Type();
+            bool isCampaigner = (bossType == AT_AIBOSS_CAMPAINGER);
+            bool isTRex = (bossType == AT_AIBOSS_TREX);
+            bool isHummer = (bossType == AT_AIBOSS_HUMMER);
+
+            bool doSpawnHealth = false;
+            kStr strItem = "";
+
+            int curBossHealth = bossData_.pBoss.Health();
+            bossData_.isBossDead = (curBossHealth <= 0);
+            bool didDie = (bossData_.isBossDead && bossData_.prevBossHealth > 0);
+            bossData_.prevBossHealth = curBossHealth; // Update (all processing must be above)
+
+            if(!bossData_.isBossDead)
+            {
+                if(curData_.Health < 20)
+                {
+                    strItem = "Health_Large";
+                    bossData_.bossHealthItemSpawnDT = 5.0;
+                    doSpawnHealth = true;
+                    if(prevData_.Health >= 20)
+                    {
+                        // Spawn (almost) immediately
+                        bossData_.last_item_spawn_time = gameTime_ - bossData_.bossHealthItemSpawnDT;
+                    }
+                }
+                else if(curData_.Health < 40)
+                {
+                    strItem = "Health_Small";
+                    bossData_.bossHealthItemSpawnDT = 1.0;
+                    doSpawnHealth = true;
+                }
+                else if(curData_.Health < 60)
+                {
+                    strItem = "Health_Small";
+                    bossData_.bossHealthItemSpawnDT = 2.0;
+                    doSpawnHealth = true;
+                }
+                else
+                {
+                    doSpawnHealth = false;
+                }
+            }
+            else if(didDie)
+            {
+                if(!isCampaigner && !isTRex)
+                {
+                    Log(strCOMP, "Boss died, spawn full health!");
+
+                    // Spawn immediately
+                    tempSpawnedHealthActorArray_.Push(UTAddOn::Turok::SpawnItemOnActor(bossData_.pBoss, "Health_Full", 300.0));
+                }
+                else
+                {
+                    Log(strCOMP, "Boss died, but DON'T spawn full health!");
+                }
+                doSpawnHealth = false;
+            }
+
+            if(doSpawnHealth)
+            {
+                float dtlis = gameTime_ - bossData_.last_item_spawn_time;
+                if(dtlis > bossData_.bossHealthItemSpawnDT)
+                {
+                    tempSpawnedHealthActorArray_.Push(UTAddOn::Turok::SpawnItemOnActor(bossData_.pBoss, strItem, 10.0));
+                    bossData_.last_item_spawn_time = gameTime_;
+                    Log(strCOMP, "Spawn item '" + strItem + "' on boss");
+                }
+                if(dtlis < 0)
+                {
+                    bossData_.last_item_spawn_time = gameTime_;
+                    Warn(strCOMP, "Reset bossData_.last_item_spawn_time");
+                }
+            }
+
+            tempSpawnedHealthActorArray_.Update(GAME_DELTA_TIME);
+        }
+
+    }
+
+    
+    void ProcessInGame()
+    {
+        if(curData_.isActive == false) 
+        {
+            if(prevData_.isActive == true)
+            {
+                Log(strCOMP, "Inactive");
+                Reset();
+            }
+        }
+        else
+        {
+            if(prevData_.isActive == false)
+            {
+                Log(strCOMP, "Reset");
+            }
+
+            hasKilled_ = (curData_.Kills > prevData_.Kills);
+
+            if(hasKilled_)
+            {
+                Log(strCOMP, "Kills: " + curData_.Kills);
+            }
+
+            // Detect level change
+            bool hasStartedNewLevel = (curData_.level != prevData_.level) &&
+                                      (curData_.level != -prevData_.level);
+            if(hasStartedNewLevel) 
+            {
+                if(prevData_.level == 0)
+                {
+                    Log(strCOMP, "New game was started");
+                    NewGame();
+                }
+                else
+                {
+                    Log(strCOMP, "Level has changed");
+                }
+                spilledFirstBlood_ = false;
+            }
+
+            // Update stuff
+            ProcessFirstBlood();
+            ProcessKillSpree();
+            ProcessKillStreak();
+            ProcessHealth();
+            ProcessBossFight();
+            
+            // Update HUD
+            if(g_gamePlaySettings.enableHud)
+            {
+                ProcessHUD();
+            }
+            else
+            {
+                hud_.Invalidate();
+            }
+
+        }
+    }
+
+    // =========================
+
+    void ProcessFirstBlood()
+    {
+        if(hasKilled_ && !spilledFirstBlood_)
+        {
+            Log(strCOMP, "First blood!");
+            spilledFirstBlood_ = true;
+            if(g_victimPosArray.Size() > 0)
+            {
+                tempSpawnedHealthActorArray_.Push(UTAddOn::Turok::SpawnItemAtPosition(g_victimPosArray.At(0), "Health_Large", 300.0, Player.Actor().SectorIndex()));
+            }
+            soundManager_.Request_PlaySound(UT_SND_EV_FIRST_BLOOD);
+        }
+    }
+
+    void ProcessHUD()
+    {
+        UT_Hud_Data data;
+
+        data.killSpree_count = spreeData_.killSpree_count;
+        data.killSpree_remainder = spreeData_.killSpree_remainder;
+
+        data.killStreak_count = streakData_.killStreak_count;
+        if(streakData_.isOnStreak)
+        {
+            float timeSinceLastKill = Clip(gameTime_ - streakData_.killStreak_LastKillTime, 0.0, g_gamePlayParams.par_streakDuration);
+            data.killStreak_perc = (g_gamePlayParams.par_streakDuration - timeSinceLastKill) / g_gamePlayParams.par_streakDuration;
+        }
+        else 
+        {
+            data.killStreak_perc = 0.0f;
+        }
+
+        data.health = pPuppet_.Health();
+        data.health_heal = g_saveData.maxHealHealth;
+        data.health_max = g_gamePlayParams.par_upperBoundHealth;
+
+        data.armor = Player.Armor() / 3;
+        data.armor_heal = g_saveData.maxHealArmor;
+        data.armor_max = g_gamePlayParams.par_upperBoundArmor;
+
+        data.isBossFight = curData_.isInBossFight;
+        if(curData_.isInBossFight)
+        {
+            @data.bossActor = bossData_.pBoss;
+            data.bossHealth = bossData_.pBoss.Health();
+            data.bossInitialHealth = bossData_.bossInitialHealth;
+        }
+        else
+        {
+            @data.bossActor = null;
+            data.bossHealth = 0;
+            data.bossInitialHealth = 0;
+        }
+
+        hud_.UpdateHudData(data);
+        hud_.Tick();
+    }
+
+    void ProcessHealth()
+    {
+
+        bool doDamage = false;
+        bool doHeal = false;
+        int nKillStreakKills = 0;
+
+        float dtldh = gameTime_ - last_damage_or_heal_time_;
+
+        if(dtldh < 0)
+        {
+            last_damage_or_heal_time_ = gameTime_;
+            Warn(strCOMP, "Reset last_damage_or_heal_time_");
+        }
+
+        // Check if a health item was (supposedly) collected
+        if(!gameJustStarted_ && 
+           curData_.Health > prevData_.Health + 5 &&
+           !(prevData_.Health <= 0 && curData_.Health >= 100))
+        {
+            soundManager_.Request_PlaySound(UT_SND_EV_BOOSTER);
+            Game.PrintLine("Booster", 0);
+            Log(strCOMP, "Booster: Health + " + (curData_.Health - prevData_.Health));
+            Log(strCOMP, "prev health: " + prevData_.Health);
+            Log(strCOMP, "cur health: " + curData_.Health);
+        }
+
+        // Determine heal or damage action
+        if(streakData_.isOnStreak)
+        {
+            nKillStreakKills = curData_.Kills - streakData_.killStreak_nKillsBegin;
+            if(nKillStreakKills > 1)
+            {
+                float maxHealRate = g_gamePlaySettings.maxHealRate;
+                float healRate = Math::Max(1.0 / (nKillStreakKills - 1), maxHealRate);
+                if(dtldh >= healRate)
+                {
+                    doHeal = true;
+                    last_damage_or_heal_time_ = gameTime_;
+                }
+            }
+        }
+        else 
+        {
+            if(dtldh >= damageInterval_)
+            {
+                doDamage = true;
+                last_damage_or_heal_time_ = gameTime_;
+            }
+        }
+
+        // Prohibit damage after a boss has been killed
+        // (player death could lead to softlock)
+        if(curData_.isInBossFight && bossData_.isBossDead)
+        {
+            return;
+        }
+
+        // Do Heal or inflict damage (or nothing)
+        if(doHeal)
+        {
+            Heal(1, 0);
+        }
+        else if(doDamage) 
+        {
+            if(Player.Armor() > 0)
+            {
+                damageInterval_ = 2.0;
+                int maxHealArmor = g_saveData.maxHealArmor;
+                int damage = 2;
+                if(Player.Armor() > maxHealArmor * 3)
+                {
+                    damageInterval_ = 1.0;
+                    damage = 2;
+                }
+                DealDamage(damage * 3);
+            }
+            else
+            {
+                int maxHealHealth = g_saveData.maxHealHealth;
+                int damage = 1;
+                if(pPuppet_.Health() > maxHealHealth)
+                {
+                    int tgtDamage = 5;
+                    damage = Min(pPuppet_.Health() - maxHealHealth, tgtDamage);
+                    damageInterval_ = 2.0;
+                }
+                else if(pPuppet_.Health() > 60)
+                {
+                    int tgtDamage = 3;
+                    damage = Min(pPuppet_.Health() - 60, tgtDamage);
+                    damageInterval_ = 2.0;
+                }
+                else
+                {
+                    damageInterval_ = 1.0;
+                }
+                Log(strCOMP, "Deal damage: " + damage + " with interval " + damageInterval_);
+                DealDamage(damage);
+            }   
+        }
+
+
+        // Announcements
+        if(Player.Armor() < 1)
+        {
+            int newHealth = pPuppet_.Health();
+            int oldHealth = prevData_.Health;
+            if(oldHealth == 1 && newHealth > 1)
+            {
+                soundManager_.Request_PlaySound(UT_SND_EV_LAST_SECOND_SAVE);
+                Game.PrintLine("Too close", 0);
+            }
+            else if(newHealth <= 10 && oldHealth != newHealth)
+            {
+                switch(newHealth)
+                {
+                    case 10:
+                        soundManager_.Request_PlaySound(UT_SND_T_10);
+                        Game.PrintLine("10", 0);
+                        break;
+                    case 9:
+                        soundManager_.Request_PlaySound(UT_SND_T_9);
+                        Game.PrintLine("9", 0);
+                        break;
+                    case 8:
+                        soundManager_.Request_PlaySound(UT_SND_T_8);
+                        Game.PrintLine("8", 0);
+                        break;
+                    case 7:
+                        soundManager_.Request_PlaySound(UT_SND_T_7);
+                        Game.PrintLine("7", 0);
+                        break;
+                    case 6:
+                        soundManager_.Request_PlaySound(UT_SND_T_6);
+                        Game.PrintLine("6", 0);
+                        break;
+                    case 5:
+                        soundManager_.Request_PlaySound(UT_SND_T_5);
+                        Game.PrintLine("5", 0);
+                        break;
+                    case 4:
+                        soundManager_.Request_PlaySound(UT_SND_T_4);
+                        Game.PrintLine("4", 0);
+                        break;
+                    case 3:
+                        soundManager_.Request_PlaySound(UT_SND_T_3);
+                        Game.PrintLine("3", 0);
+                        break;
+                    case 2:
+                        soundManager_.Request_PlaySound(UT_SND_T_2);
+                        Game.PrintLine("2", 0);
+                        break;
+                    case 1:
+                        soundManager_.Request_PlaySound(UT_SND_T_1);
+                        Game.PrintLine("1", 0);
+                        break;
+                    case 0:
+                        soundManager_.Request_PlaySound(UT_SND_EV_DEAD);
+                        Game.PrintLine("DEAD", 0);
+                        break;
+                }
+            }
+            else if(newHealth <= 20 && oldHealth > 20)
+            {
+                soundManager_.Request_PlaySound(UT_SND_T_20);
+                Game.PrintLine("20 seconds left", 0);
+            }
+            else if(newHealth <= 30 && oldHealth > 30)
+            {
+                soundManager_.Request_PlaySound(UT_SND_T_30);
+                Game.PrintLine("30 seconds left", 0);
+            }
+            else if(newHealth <= 60 && oldHealth > 60)
+            {
+                soundManager_.Request_PlaySound(UT_SND_T_60);
+                Game.PrintLine("One minute until death", 0);
+            }
+
+        }
+
+    }
+
+    void ProcessKillStreak()
+    {
+
+        float timeSinceLastKill = gameTime_ - streakData_.killStreak_LastKillTime;
+        if(timeSinceLastKill < 0)
+        {
+            float prevGameTime = prevData_.ticks * GAME_DELTA_TIME;
+            Warn(strCOMP, "Reset LastKillTime from: " + streakData_.killStreak_LastKillTime);
+            streakData_.killStreak_LastKillTime -= prevGameTime;
+            Warn(strCOMP, "To: " + streakData_.killStreak_LastKillTime);
+        }
+
+        bool killingStreakHasEnded = (timeSinceLastKill > g_gamePlayParams.par_streakDuration);
+
+        int nKillStreakKills = curData_.Kills - streakData_.killStreak_nKillsBegin;
+
+        if(nKillStreakKills < 0)
+        {
+            Warn(strCOMP, "Reset killStreak_nKillsBegin");
+            streakData_.killStreak_nKillsBegin = curData_.Kills;
+            nKillStreakKills = 0;
+        }
+
+        streakData_.killStreak_count = nKillStreakKills;
+
+        if (!hasKilled_)
+        {
+            if(killingStreakHasEnded)
+            {
+                // End the current streak
+                if(streakData_.isOnStreak && nKillStreakKills > 0)
+                {
+                    //Game.PlaySound("UTAddOn/sounds/KP_Retribution.ksnd");
+                    Game.PrintLine("Killing streak ended", 0);
+                    Info("Streak end");
+                    last_damage_or_heal_time_ = gameTime_ - damageInterval_;
+                }
+                streakData_.isOnStreak = false;
+                streakData_.killStreak_nKillsBegin = curData_.Kills;
+                if(spreeData_.ownageCount >= 5)
+                {
+                    Info("Unreal ownage!");
+                    soundManager_.Request_PlaySound(UT_SND_EV_UNREAL);
+                }
+                spreeData_.ownageCount = 0;
+            }
+        }  
+        else
+        {
+
+            // Enable streak
+            streakData_.isOnStreak = true;
+
+            // Update last kill time
+            streakData_.killStreak_LastKillTime = gameTime_;
+
+            // Decide wich sound to play
+            if(nKillStreakKills > 0)
+            {
+
+                // Play sounds on kills
+                // --------------------
+                
+                switch(nKillStreakKills)
+                {
+                    case 1:
+                        soundManager_.Request_PlaySound(UT_SND_KS_AVERTED);
+                        Game.PrintLine("Damage averted", 0);
+                        Info("Streak begin");
+                        break;
+                    case 2:
+                        soundManager_.Request_PlaySound(UT_SND_KS_DOUBLE_KILL);
+                        Game.PrintLine("Double Kill", 0);
+                        Info("Double Kill");
+                        g_saveData.killStreakCounter[1]++;
+                        break;
+                    case 3:
+                        soundManager_.Request_PlaySound(UT_SND_KS_MULTI_KILL);
+                        Game.PrintLine("Multi Kill", 0);
+                        Info("Multi Kill");
+                        g_saveData.killStreakCounter[2]++;
+                        break;
+                    case 4:
+                        soundManager_.Request_PlaySound(UT_SND_KS_MEGA_KILL);
+                        Game.PrintLine("Mega Kill", 0);
+                        Info("Mega Kill");
+                        g_saveData.killStreakCounter[3]++;
+                        break;
+                    case 5:
+                        soundManager_.Request_PlaySound(UT_SND_KS_ULTRA_KILL);
+                        Game.PrintLine("Ultra Kill", 0);
+                        Info("Ultra Kill");
+                        g_saveData.killStreakCounter[4]++;
+                        break;
+                    case 6:
+                        soundManager_.Request_PlaySound(UT_SND_KS_MONSTER_KILL);
+                        Game.PrintLine("Monster Kill", 0);
+                        Info("Monster Kill");
+                        g_saveData.killStreakCounter[5]++;
+                        break;
+                    case 7:
+                        soundManager_.Request_PlaySound(UT_SND_KS_LUDICROUS_KILL);
+                        Game.PrintLine("Ludicrous Kill", 0);
+                        Info("Ludicrous Kill");
+                        g_saveData.killStreakCounter[6]++;
+                        Achievement_MaxHealthIncreased(1);
+                        break;
+                    case 8:
+                        soundManager_.Request_PlaySound(UT_SND_KS_HOLY_SHIT);
+                        Game.PrintLine("Holy Shit", 0);
+                        Info("Holy Shit");
+                        g_saveData.killStreakCounter[7]++;
+                        Achievement_MaxHealthIncreased(2);
+                        break;
+                    default:
+                        soundManager_.Request_PlaySound(UT_SND_KS_OWNAGE);
+                        Game.PrintLine("Ownage", 0);
+                        Info("Ownage");
+                        g_saveData.killStreakCounter[8]++;
+                        if(nKillStreakKills < 10)
+                        {
+                            Achievement_MaxHealthIncreased(3);
+                        }
+                        else
+                        {
+                            Achievement_MaxHealthIncreased(5);
+                        }
+                }
+                g_saveData.UpdateSaveData();
+                
+                // Spawn FX effects on kills
+                // -------------------------
+
+                int secIdx = Player.Actor().SectorIndex();
+                float playerHeight = pPuppet_.ViewHeight();
+                kVec3 playerEyePos = Player.Actor().Origin() + kVec3(0,0,playerHeight);
+
+                float nearClip = 150.0;
+                float minDistClip = 25.0;
+                float farClip = 1000.0;
+                float farInterp = 500.0;
+                float zOffNear = -50;
+                float zOffFar = 10;
+
+                kVec3 fxPos;
+                while(g_victimPosArray.Pop(fxPos))
+                {
+                    float distInterp = Clip(playerEyePos.Distance(fxPos), nearClip, farInterp);
+                    float zInterp = Math::Lerp(zOffNear, zOffFar, distInterp / (farInterp - nearClip));
+
+                    // Determine final spawn position
+                    kVec3 fxSpawnPos = fxPos + kVec3(0,0,zInterp);
+                    kVec3 vDir = (fxSpawnPos - playerEyePos);
+                    float distClip = Norm(vDir);
+                    vDir.Normalize();
+                    fxSpawnPos = playerEyePos + vDir * Clip(distClip - minDistClip, nearClip, farClip);
+
+                    int fxid = nKillStreakKills - g_victimPosArray.Size();
+                    switch(fxid)
+                    {
+                        case 1:
+                            Game.SpawnFx("UTAddOn/fx/KS_Kill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 2:
+                            Game.SpawnFx("UTAddOn/fx/KS_DoubleKill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 3:
+                            Game.SpawnFx("UTAddOn/fx/KS_MultiKill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 4:
+                            Game.SpawnFx("UTAddOn/fx/KS_MegaKill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 5:
+                            Game.SpawnFx("UTAddOn/fx/KS_UltraKill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 6:
+                            Game.SpawnFx("UTAddOn/fx/KS_MonsterKill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 7:
+                            Game.SpawnFx("UTAddOn/fx/KS_LudicrousKill.kfx", fxSpawnPos, secIdx);
+                            break;
+                        case 8:
+                            Game.SpawnFx("UTAddOn/fx/KS_HolyShit.kfx", fxSpawnPos, secIdx);
+                            break;
+                        default:
+                            Game.SpawnFx("UTAddOn/fx/KS_Ownage.kfx", fxSpawnPos, secIdx);
+                            spreeData_.ownageCount++;
+                    }
+                }
+
+            }
+        }
+   
+    }
+
+    void Achievement_MaxHealthIncreased(int amount)
+    {
+        if(!g_gamePlaySettings.enableAchievements)
+        {
+            return;
+        }
+
+        int maxHealHealth = g_saveData.maxHealHealth;
+        int maxHealArmor = g_saveData.maxHealArmor;
+
+        if(maxHealHealth < g_gamePlayParams.par_upperBoundHealth)
+        {
+            maxHealHealth = Min(maxHealHealth + amount, g_gamePlayParams.par_upperBoundHealth);
+            g_saveData.maxHealHealth = maxHealHealth;
+            Game.PrintLine("Max heal increased to " + maxHealHealth, 1);
+            Info("Updated max health to: " + maxHealHealth);
+            g_saveData.UpdateSaveData();
+        }
+        else if(maxHealArmor < g_gamePlayParams.par_upperBoundArmor)
+        {
+            // If max health is reached, increase armor max health
+            maxHealArmor = Min(maxHealArmor + 1, g_gamePlayParams.par_upperBoundHealth);
+            g_saveData.maxHealArmor = maxHealArmor;
+            Game.PrintLine("Max armor heal increased to " + maxHealArmor, 1);
+            Info("Updated max armor to: " + maxHealArmor);
+            g_saveData.UpdateSaveData();
+        }
+        else
+        {
+            Log(strCOMP, "MaxHealthIncreased achievement wihtout effect: already maxxed");
+        }
+    }
+
+    
+
+
+    void ProcessKillSpree()
+    {
+        
+        int nKillSpreeKills = curData_.Kills - spreeData_.killSpree_nKillsBegin;
+        bool isSpreeInterrupted = curData_.wasHit;
+
+        if(nKillSpreeKills > 0 && isSpreeInterrupted)
+        {
+            // Reset spree
+            spreeData_.killSpree_nKillsBegin = curData_.Kills;
+            spreeData_.killSpree_count = 0;
+            spreeData_.killSpree_remainder = 0;
+            soundManager_.Request_PlaySound(UT_SND_EV_DENIED);
+            Game.PrintLine("Killing spree ended", 0);
+            Info("Killing spree was interrupted");
+            return;
+        }
+
+        if(!hasKilled_)
+        {
+            return;
+        }
+
+        // Identify spree occurrence
+        int remainder = nKillSpreeKills % 5;
+        int nSpree = (nKillSpreeKills - remainder) / 5;
+        spreeData_.killSpree_remainder = remainder;
+
+        if(nSpree > spreeData_.killSpree_count)
+        {
+
+            spreeData_.killSpree_count = nSpree;
+
+            // TODO: Delay message
+
+            switch(nSpree)
+            {
+                case 1:
+                    soundManager_.Request_PlaySound(UT_SND_KP_SPREE);
+                    Game.PrintLine("You are on a killing spree", 2, 180);
+                    Info("Killing Spree");
+                    break;
+                case 2:
+                    soundManager_.Request_PlaySound(UT_SND_KP_RAMPAGE);
+                    Game.PrintLine("You are on a rampage", 2, 180);
+                    Info("Rampage");
+                    break;
+                case 3:
+                    soundManager_.Request_PlaySound(UT_SND_KP_DOMINATING);
+                    Game.PrintLine("You are dominating", 2, 180);
+                    Info("Dominating");
+                    break;
+                case 4:
+                    soundManager_.Request_PlaySound(UT_SND_KP_UNSTOPPABLE);
+                    Game.PrintLine("You are unstoppable", 2, 180);
+                    Info("Unstoppable");
+                    break;
+                case 5:
+                    soundManager_.Request_PlaySound(UT_SND_KP_GODLIKE);
+                    Game.PrintLine("You are godlike", 2, 180);
+                    Info("Godlike");
+                    break;
+                default:
+                    soundManager_.Request_PlaySound(UT_SND_KP_WHICKED_SICK);
+                    Game.PrintLine("You are whicked sick", 2, 180);
+                    Info("Whicked Sick");
+            }
+
+            if(g_gamePlaySettings.enableAchievements)
+            {
+                // TODO: move to own achievement function
+                //       note: +maxHealth achievment also increases armor! merge functions?
+                int armorHeal = Min(5*nSpree, 30);
+                int maxHealArmor = g_saveData.maxHealArmor;
+                int newArmorMax = Max(maxHealArmor, armorHeal);
+                if(newArmorMax > maxHealArmor)
+                {
+                    maxHealArmor = newArmorMax;
+                    g_saveData.maxHealArmor = maxHealArmor;
+                    g_saveData.UpdateSaveData();
+                    Game.PrintLine("Max armor heal increased to " + maxHealArmor, 0);
+                    Info("Updated max armor to: " + maxHealArmor);
+                }
+                Heal(0, armorHeal);
+            }
+            
+        }
+
+
+    }
+
+}
+
+
+}   // NS: UTAddOn

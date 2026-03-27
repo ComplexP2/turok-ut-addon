@@ -1,0 +1,99 @@
+//
+// Copyright(C) 2014-2015 Samuel Villarreal
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// DESCRIPTION:
+//      Sentry Object Class
+//
+
+#include "scripts/common.txt"
+#include "UTAddOn/scripts/ut_eventshandler.txt"
+
+//-----------------------------------------------------------------------------
+//
+// Sentry
+//
+//-----------------------------------------------------------------------------
+
+/*
+==============================================================
+TurokSentry
+==============================================================
+*/
+
+final class TurokSentry : TurokEnemy
+{
+    TurokSentry(kActor @actor)
+    {
+        super(actor);
+    }
+    
+    /*
+    ==============================================================
+    GunFire
+    ==============================================================
+    */
+    
+    void GunFire(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        if(self.GetTarget() is null)
+        {
+            return;
+        }
+        
+        if(w > 0.0f)
+        {
+            self.PlaySound("sounds/shaders/auto_shotgun_shot.ksnd");
+            self.SpawnProjectile("fx/robot_bullet.kfx", kVec3(x, y, z),
+                self.GetTarget().Origin(), Math::Deg2Rad(45.0f));
+        }
+        else
+        {
+            self.PlaySound("sounds/shaders/missile_launch.ksnd");
+            self.SpawnProjectile("fx/robot_rocket.kfx", kVec3(x, y, z),
+                self.GetTarget().Origin(), Math::Deg2Rad(45.0f));
+        }
+    }
+    
+    /*
+    ==============================================================
+    RoboShutdown
+    ==============================================================
+    */
+    
+    void RoboShutdown(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.PlaySound("sounds/shaders/robot_shutdown.ksnd");
+    }
+    
+    /*
+    ==============================================================
+    Explosion1Sound
+    ==============================================================
+    */
+    
+    void Explosion1Sound(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.PlaySound("sounds/shaders/explosion_1.ksnd");
+    }
+    
+    /*
+    ==============================================================
+    OnDeath
+    ==============================================================
+    */
+    
+    void OnDeath(kActor @killer, kDictMem @damageDef)
+    {
+        UTAddOn::UT_Addon_Hook_EnemyKilled(killer, self);
+    }
+}

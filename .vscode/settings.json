@@ -1,0 +1,7 @@
+// settings.json (user oder workspace)
+{
+  "files.associations": {
+    "*.txt": "angelscript",
+    "player.txt": "angelscript"
+  }
+}

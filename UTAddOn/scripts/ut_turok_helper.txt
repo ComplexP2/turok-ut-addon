@@ -1,0 +1,298 @@
+#include "scripts/common.txt"
+
+#include "UTAddOn/scripts/ut_helper.txt"
+#include "UTAddOn/scripts/ut_tools.txt"
+
+namespace UTAddOn
+{
+namespace Turok		// Namespace is only found if UTAddOn:: prefix is given, even if used inside a UTAddOn namespace
+{
+
+enum UT_Level_IDs
+{
+	UTA_LVL_ID_NONE = 0,
+	UTA_LVL_ID_LEVEL_1 = 1,
+	UTA_LVL_ID_LEVEL_2 = 2,
+	UTA_LVL_ID_LEVEL_3 = 3,
+	UTA_LVL_ID_LEVEL_3_BOSS = 13,
+	UTA_LVL_ID_LEVEL_4 = 4,
+	UTA_LVL_ID_LEVEL_5 = 5,
+	UTA_LVL_ID_LEVEL_5_BOSS = 15,
+	UTA_LVL_ID_LEVEL_6 = 6,
+	UTA_LVL_ID_LEVEL_7 = 7,
+	UTA_LVL_ID_LEVEL_8 = 8,
+	UTA_LVL_ID_LEVEL_8_BOSS_1 = 18,
+	UTA_LVL_ID_LEVEL_8_BOSS_2 = 19,
+	UTA_LVL_ID_SPIRIT_LEVEL_1 = -1,
+	UTA_LVL_ID_SPIRIT_LEVEL_2 = -2,
+	UTA_LVL_ID_SPIRIT_LEVEL_3 = -3,
+	UTA_LVL_ID_SPIRIT_LEVEL_4 = -4,
+	UTA_LVL_ID_SPIRIT_LEVEL_5 = -5,
+	UTA_LVL_ID_SPIRIT_LEVEL_6 = -6,
+	UTA_LVL_ID_SPIRIT_LEVEL_7 = -7,
+	UTA_LVL_ID_SPIRIT_LEVEL_8 = -8,
+	UTA_LVL_ID_LEVEL_TRAINING = -9,
+	UTA_LVL_ID_CREDITS = -10,
+
+	UTA_LVL_ID_OFFSET_CUSTOM = 100
+}
+
+bool IsInGame(int levelId)
+{
+	return (levelId != UTA_LVL_ID_CREDITS && levelId != UTA_LVL_ID_NONE);
+}
+
+bool IsBossFight(int levelId)
+{
+	return (levelId == UTA_LVL_ID_LEVEL_3_BOSS || levelId == UTA_LVL_ID_LEVEL_5_BOSS ||
+	        levelId == UTA_LVL_ID_LEVEL_8_BOSS_1 || levelId == UTA_LVL_ID_LEVEL_8_BOSS_2);
+}
+
+bool IsInSpiritWorld(int levelId)
+{
+	return (levelId <= UTA_LVL_ID_SPIRIT_LEVEL_1 && levelId >= UTA_LVL_ID_SPIRIT_LEVEL_8);
+}
+
+bool IsTraining(int levelId)
+{
+	return (levelId == UTA_LVL_ID_LEVEL_TRAINING);
+}
+
+bool IsCredits(int levelId)
+{
+	return (levelId == UTA_LVL_ID_CREDITS);
+}
+
+
+// ==========
+// GetLevelId
+// ==========
+// Convert the map id to the corresponding level number.
+// Unknown map ids will get an offset of 100 to prevent conflicts.
+// Although all paths return a value, the compiler complains if the final return is not set. What the frak ...
+int GetLevelId()
+{
+    int mapId = Game.GetCurrentMapID();
+
+    switch(mapId)
+    {
+		// Not an active game (menu, sequences)
+		case 1:		// Escape from Campaigner apartment
+        case 42:	// Menu
+		case 43:
+		case 44:
+		case 45:
+		case 46:
+            return UTA_LVL_ID_NONE;
+
+		// Credits
+		case 2:
+			return UTA_LVL_ID_CREDITS;
+
+		// Training
+		case 47:
+			return UTA_LVL_ID_LEVEL_TRAINING;
+
+		// Spirit stuff
+		case 26:
+		case 27:
+			return UTA_LVL_ID_SPIRIT_LEVEL_1;
+		case 28:
+		case 29:
+			return UTA_LVL_ID_SPIRIT_LEVEL_2;
+		case 30:
+		case 31:
+			return UTA_LVL_ID_SPIRIT_LEVEL_3;
+		case 32:
+		case 33:
+			return UTA_LVL_ID_SPIRIT_LEVEL_4;
+		case 34:
+		case 35:
+			return UTA_LVL_ID_SPIRIT_LEVEL_5;
+		case 36:
+		case 37:
+			return UTA_LVL_ID_SPIRIT_LEVEL_6;
+		case 38:
+		case 39:
+			return UTA_LVL_ID_SPIRIT_LEVEL_7;
+		case 40:
+		case 41:
+			return UTA_LVL_ID_SPIRIT_LEVEL_8;
+
+        // Level 1
+		case 4:
+		case 5:     // Includes hub
+			return UTA_LVL_ID_LEVEL_1;
+
+        // Level 2
+		case 6:
+		case 7:
+			return UTA_LVL_ID_LEVEL_2;
+
+        // Level 3
+		case 8:
+		case 9:
+			return UTA_LVL_ID_LEVEL_3;
+		case 48:    // Boss: 2 Hummer + Longhunter
+			return UTA_LVL_ID_LEVEL_3_BOSS;
+
+        // Level 4
+		case 10:
+		case 11:
+			return UTA_LVL_ID_LEVEL_4;
+
+        // Level 5
+		case 12:
+		case 13:
+			return UTA_LVL_ID_LEVEL_5;
+		case 49:    // Boss: Mantis
+			return UTA_LVL_ID_LEVEL_5_BOSS;
+
+        // Level 6
+		case 14:
+		case 15:
+		case 16:
+			return UTA_LVL_ID_LEVEL_6;
+
+        // Level 7
+		case 17:
+		case 18:
+		case 19:
+		case 20:
+			return UTA_LVL_ID_LEVEL_7;
+
+        // Level 8
+		case 21:
+		case 22:
+		case 23:
+		case 24:
+		case 25:	// Pre-Campaigner hallway
+			return UTA_LVL_ID_LEVEL_8;
+		case 3:     // Boss: T-Rex
+			return UTA_LVL_ID_LEVEL_8_BOSS_1;
+		case 0:     // Boss: Campaigner
+			return UTA_LVL_ID_LEVEL_8_BOSS_2;
+				
+
+        // Custom/Unknown
+        default:
+            return UTA_LVL_ID_OFFSET_CUSTOM + mapId;
+    }
+
+    return UTA_LVL_ID_NONE;
+}
+
+
+// ===============
+// DetectBossFight
+// ===============
+// Detect if a boss currently exists and return the boss actor handle
+bool DetectBossFight(kActor@ &out pBoss)
+{
+
+	@pBoss = World.GetActorByTID(441, AT_AIBOSS_MANTIS);
+	if(@pBoss is null)
+	{
+		@pBoss = World.GetActorByTID(400, AT_AIBOSS_HUMMER);
+	}
+	if(@pBoss is null)
+	{
+		@pBoss = World.GetActorByTID(400, AT_AIBOSS_HUNTER);
+		if(pBoss !is null)
+		{
+			kActor @hummer1 = World.GetActorByTID(1140);
+			kActor @hummer2 = World.GetActorByTID(1141);
+			if(hummer1.Health() > 0)
+			{
+				@pBoss = hummer1;
+			}
+			else if(hummer2.Health() > 0)
+			{
+				@pBoss = hummer2;
+			}
+		}
+	}
+	if(@pBoss is null)
+	{
+		@pBoss = World.GetActorByTID(400, AT_AIBOSS_CAMPAINGER);
+	}
+	if(@pBoss is null)
+	{
+		@pBoss = World.GetActorByTID(400, AT_AIBOSS_TREX);
+	}
+	
+	if(@pBoss !is null)
+	{
+		return true;
+	}
+	else 
+	{
+		return false;
+	}
+
+	// Don't return something here, because all paths already return a value and for some reason this would kill the compiler lol ...
+}
+
+// ================
+// SpawnItemOnActor
+// ================
+// Spawn an item originating from the given actor
+UT_TemporaryActor SpawnItemOnActor(kActor @pActor, kStr strItem, float lifeTime_s)
+{
+	kVec3 pos = pActor.Origin();
+	int secIdx = pActor.GetSectorIndexAtLocation(pos, 0);
+
+	return SpawnItemAtPosition(pos, strItem, lifeTime_s, secIdx);
+}
+
+// ===================
+// SpawnItemAtPosition
+// ===================
+// Spawn an item originating from the given position
+UT_TemporaryActor SpawnItemAtPosition(kVec3 pos, kStr strItem, float lifeTime_s, int secIdx)
+{
+
+	kActor @item = ActorFactory.Spawn(strItem,
+										pos.x,
+										pos.y,
+										pos.z + 32.0f,
+										0, secIdx);
+										
+	item.Gravity() = 0.5f;
+	item.BounceDamp() = 0.5f;
+	item.ClipFlags() = (CF_DROPOFF|CF_CLIPEDGES|CF_NOCLIPACTORS|CF_COLLIDEFLOORS|CF_COLLIDEHEIGHT);
+	item.Velocity().x = Math::RandCFloat() * 4.096f;
+	item.Velocity().y = Math::RandCFloat() * 4.096f;
+	item.Velocity().z = 4.096f + (Math::RandFloat() * 4.096f);
+	
+	item.RunFxEvent("Item_Spawn");
+
+	// Actor with limited lifetime
+	UT_TemporaryActor tempActor;
+	@tempActor.actorRef = item;
+	tempActor.lifeTime_s = lifeTime_s;
+
+	return tempActor;
+}
+
+
+// ==============
+// SpawnLifeForce
+// ==============
+// Spawns a lifeforce object into turok (so it's collected immediately)
+void SpawnLifeForce()
+{
+	/* DON'T! Because we cannot detect if lives are full and then we would spam objects!
+		Workaround would be quite a bunch of cumbersome work ...
+	kVec3 pos = Player.Actor().Origin();
+	int secIdx = Player.Actor().SectorIndex();
+	kActor @item = ActorFactory.Spawn("UTA_LifeForce_2_Silent",
+										pos.x,
+										pos.y,
+										pos.z + Player.Actor().ViewHeight()/2.0f,
+										0, secIdx);
+	*/
+}
+
+}	// NS: Turok
+}   // NS: UTAddOn

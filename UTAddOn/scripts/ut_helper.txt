@@ -1,0 +1,176 @@
+
+namespace UTAddOn
+{
+
+bool g_enableLog = true;
+
+// ============
+// Unit vectors
+// ============
+kVec3 ex(1,0,0);
+kVec3 ey(0,1,0);
+kVec3 ez(0,0,1);
+
+
+// =======
+// Logging
+// =======
+
+kStr LogPrefix()
+{
+    float gameTime = PlayLoop.Ticks() * GAME_DELTA_TIME;
+    return "UTAddOn[" + gameTime + "]: ";
+}
+
+// Public direct print to console
+void Print(kStr str)
+{
+    Sys.Print(str);
+}
+void PrintW(kStr str)
+{
+    Sys.Warning(str + "\n");
+}
+
+// Public prefixed print to console
+void Info(kStr str)
+{
+    Sys.Print("UTAddOn: " + str);
+}
+void InfoW(kStr str)
+{
+    Sys.Warning("UTAddOn: " + str + "\n");
+}
+
+// ==================
+
+// Private Print
+void Log(kStr str)
+{
+    if(!g_enableLog) return;
+    Sys.Print(LogPrefix() + str);
+}
+void Log(kStr component, kStr str)
+{
+    Log("[" + component + "]: " + str);
+}
+
+// Private Warn
+void Warn(kStr str)
+{
+    if(!g_enableLog) return;
+    Sys.Warning(LogPrefix() + str + "\n");
+}
+void Warn(kStr component, kStr str)
+{
+    Warn("[" + component + "]: " + str);
+}
+
+
+// ======
+// String
+// ======
+kStr Str(kVec3 v)
+{
+    return "[" + v.x + ", " + v.y + ", " + v.z + "]";
+}
+
+kStr Str(kQuat q)
+{
+    return "[" + q.w + ", " + q.x + ", " + q.y + ", " + q.z + "]";
+}
+
+
+int StrLen(kStr str)    // Why can't we have this? -_-
+{
+    str += "{EoS}";
+    return str.IndexOf("{EoS}");
+}
+
+kStr EncodeBoolArray(array<bool> bools)
+{
+    kStr str;
+
+    int frakingLength = bools.length();
+
+    for(int i = 0; i < frakingLength; i++)
+    {
+        if(bools[i])
+        {
+            str += "1";
+        }
+        else
+        {
+            str += "0";
+        }
+    }
+
+    return str;
+}
+
+array<bool> DecodeBoolString(kStr str)
+{
+    array<bool> bools;
+
+    kStr one = "1";
+
+    for(int i = 0; i < StrLen(str); i++)
+    {
+        if(str[i] == one[0])
+        {
+            bools.insertLast(true);
+        }
+        else
+        {
+            bools.insertLast(false);
+        }
+    }
+
+    return bools;
+}
+
+
+// ======================
+// Missing Math Functions
+// ======================
+int Max(int a, int b)
+{
+    if(a > b)
+    {
+        return a;
+    }
+    return b;
+}
+
+int Min(int a, int b)
+{
+    if(a < b)
+    {
+        return a;
+    }
+    return b;
+}
+
+int Clip(int val, int minVal, int maxVal)
+{
+    return Min(Max(val, minVal), maxVal);
+}
+
+float Clip(float val, float minVal, float maxVal)
+{
+    return Math::Min(Math::Max(val, minVal), maxVal);
+}
+
+float Norm(kVec3 vect)
+{
+    return Math::Sqrt(vect.x*vect.x + vect.y*vect.y + vect.z*vect.z);
+}
+
+kQuat Inverse(kQuat q)
+{
+    float th = Math::ACos(q.w);
+    float s = Math::Sin(th);
+    return kQuat(2.0f * th, -q.x * s, -q.y * s, -q.z * s);
+}
+
+}   // NS: UTAddOn

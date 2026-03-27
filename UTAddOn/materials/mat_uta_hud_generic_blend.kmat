@@ -1,0 +1,13 @@
+material surf_12_1234Y {
+    shader "progs/worldcolorfx"
+    fullbright
+    blend
+    cull back
+    sort default
+    color_diffuse "1.000000 1.000000 1.000000 0.625000"
+
+    sampler "diffuse" 0 "UTAddOn/textures/tex_black.png" {
+        filter      linear
+        wrap        repeat
+    }
+}

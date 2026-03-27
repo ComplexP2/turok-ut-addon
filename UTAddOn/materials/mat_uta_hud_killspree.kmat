@@ -1,0 +1,29 @@
+material NOT_surf_12_1234B {
+    shader "progs/world"
+    fullbright
+    blend
+    sort transclucent
+    depthtest
+    nodepthmask
+    color_diffuse "1.000000 1.000000 1.000000 1.000000"
+    
+    sampler "diffuse" 0 "UTAddOn/textures/tex0555_00.png" {
+        filter      linear
+        wrap        mirrored
+    }
+}
+
+material surf_12_1234B {
+    shader "progs/world"
+    sort default
+    fullbright
+    cull back
+    depthtest
+    color_diffuse "1.000000 1.000000 1.000000 1.000000"
+
+    sampler "diffuse" 0 "UTAddOn/textures/tex0610_00.png" {
+        filter      linear
+        wrap        repeat
+    }
+}
+

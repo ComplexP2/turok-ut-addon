@@ -1,0 +1,36 @@
+sounds[1] =
+{
+    {
+        wavefile = "UTAddOn/sounds/waves/ArmorHit.wav"
+        bOneInstancePerSource = 1
+        bLoop = 0
+        bEnableVolumeEnvelope = 0
+        bEnablePitchEnvelope = 0
+        bFadeIfObstructed = 0
+        bUpdateNoEnvelope = 0
+        bLinkToEnvelope = 0
+        bFullVolume = 0
+        delay = 0
+        priority = 80
+        random = 1.000000
+        radioVolume = 2
+        volume_envelope =
+        {
+            max = 0.4
+            start = 1.000000
+            end = 1.000000
+            duration = 60
+            envStartTime = 0
+        }
+
+        pitch_envelope =
+        {
+            max = 1.000000
+            start = 2.000000
+            end = 2.000000
+            duration = 60
+            envStartTime = 0
+        }
+    }
+}
+

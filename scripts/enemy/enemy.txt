@@ -1,0 +1,837 @@
+//
+// Copyright(C) 2014-2015 Samuel Villarreal
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// DESCRIPTION:
+//      Enemy/Monster Script Object Classes
+//
+
+#include "scripts/common.txt"
+#include "UTAddOn/scripts/ut_eventshandler.txt"
+
+//-----------------------------------------------------------------------------
+//
+// Enemy Base Class
+//
+//-----------------------------------------------------------------------------
+
+/*
+==============================================================
+TurokEnemy
+==============================================================
+*/
+
+class TurokEnemy : ScriptObject
+{
+    kActor @self;
+    bool m_bMortallyWounded;
+    bool m_bDroppedItem;
+    kAngle m_lookAngle;
+    float m_deathFreezeTime;
+    
+    TurokEnemy(kActor @actor)
+    {
+        @self = actor;
+        m_bMortallyWounded = false;
+        m_bDroppedItem = false;
+        m_lookAngle = 0;
+        m_deathFreezeTime = 0;
+    }
+    
+    ~TurokEnemy()
+    {
+    }
+    
+    /*
+    ==============================================================
+    OnTick
+    ==============================================================
+    */
+    
+    void OnTick(void)
+    {
+        if((self.Flags() & AF_DEAD) != 0)
+        {
+            if(m_deathFreezeTime > 0)
+            {
+                m_deathFreezeTime -= GAME_DELTA_TIME;
+                
+                if(m_deathFreezeTime <= 0)
+                {
+                    Game.SpawnFx("fx/freeze_explosion.kfx", self.Origin(), self.SectorIndex());
+                    self.Remove();
+                }
+            }
+        }
+    }
+    
+    /*
+    ==============================================================
+    OnSpawn
+    ==============================================================
+    */
+    
+    void OnSpawn(void)
+    {
+    }
+    
+    /*
+    ==============================================================
+    TurnAngles
+    ==============================================================
+    */
+    
+    void TurnAngles(const float turnSpeed, const float angles)
+    {
+        float temp = angles;
+        float ang = angles;
+        
+        if(ang > turnSpeed)
+        {
+            ang = turnSpeed;
+        }
+        else if(ang < -turnSpeed)
+        {
+            ang = -turnSpeed;
+        }
+        
+        ang *= GAME_FRAME_TIME;
+        if(Math::Fabs(ang) > Math::Fabs(temp))
+        {
+            ang = temp;
+        }
+        
+        self.Yaw() += ang;
+    }
+    
+    /*
+    ==============================================================
+    InPlayerProjectilePath
+    ==============================================================
+    */
+    
+    bool InPlayerProjectilePath(const float angleRange)
+    {
+        if((Player.Actor().PlayerFlags() & PF_FIREDPROJECTILE) != 0)
+        {
+            if(Math::Fabs(self.GetTurnYaw(Player.Actor().Origin())) < angleRange)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /*
+    ==============================================================
+    TossActor
+    ==============================================================
+    */
+    
+    kActor @TossActor(const kStr &in itemName, const float x, const float y, const float z, const kVec3 &in velocity)
+    {
+        kActor @actor = ActorFactory.Spawn(itemName, x, y, z, 0, self.SectorIndex());
+        
+        if(actor is null)
+        {
+            return null;
+        }
+        
+        actor.Scale().Set(0.35f, 0.35f, 0.35f);
+        actor.ClipFlags() = (CF_DROPOFF|CF_CLIPEDGES|CF_NOCLIPACTORS|CF_COLLIDEFLOORS|CF_COLLIDEHEIGHT);
+        actor.Velocity() = velocity;
+        
+        actor.Velocity() *= (1.0f / 60.0f);
+        
+        switch(actor.Type())
+        {
+        case AT_GIB_ALIEN3:
+            actor.BounceDamp() = 0.6f;
+            actor.Gravity() = 0.5f;
+            break;
+        
+        case AT_GIB_STALKER3:
+            actor.BounceDamp() = 0.4f;
+            actor.Gravity() = 0.6f;
+            break;
+            
+        case AT_GIB_STALKER5:
+        case AT_GIB_STALKER2:
+        case AT_GIB_STALKER1:
+            actor.BounceDamp() = 0.3f;
+            actor.Gravity() = 0.6f;
+            break;
+            
+        default:
+            actor.BounceDamp() = 0.5f;
+            actor.Gravity() = 0.5f;
+            break;
+        }
+        
+        return actor;
+    }
+    
+    /*
+    ==============================================================
+    TossItem
+    ==============================================================
+    */
+    
+    void TossItem(const kStr &in itemName, const float x, const float y, const float z)
+    {
+        kActor @item = TossActor(itemName, x, y, z, kVec3(0, 0, 1).Randomize(0.25f).Normalize() * 409.6f);
+        item.RunFxEvent("Item_Spawn");
+    }
+    
+    /*
+    ==============================================================
+    TossGib
+    ==============================================================
+    */
+    
+    void TossGib(const kStr &in gibActor, const float x, const float y, const float z)
+    {
+        kVec3 dir = (kVec3(0, 0, 1).Randomize(0.3f).Normalize() * ((Math::Rand() % -2 + 3) * 10.24f)) * 15.0f;
+        kVec3 normal, cp;
+        kActor @gib;
+        TurokGiblet @gibObj;
+        
+        self.CheckPosition(x, y);
+        normal = CModel.ContactNormal();
+        
+        @gib = TossActor(gibActor, x, y, z, dir);
+        
+        dir.Normalize();
+        
+        cp = normal.Cross(dir);
+        cp.Normalize();
+        
+        gib.Yaw() = cp.ToYaw();
+        gib.Pitch() = -cp.ToPitch();
+        
+        @gibObj = cast<TurokGiblet@>(gib.ScriptObject().obj);
+        
+        if(!(gibObj is null))
+        {
+            gibObj.Spin();
+        }
+    }
+    
+    /*
+    ==============================================================
+    Knockback
+    ==============================================================
+    */
+    
+    void Knockback(kActor @instigator, const float r, const float x, const float y, const float z)
+    {
+        kVec3 org;
+        kVec3 pos;
+        kActor @targ;
+        
+        if(self.GetTarget() is null)
+        {
+            return;
+        }
+        
+        @targ = self.GetTarget();
+        
+        org.x = self.Origin().x;
+        org.y = self.Origin().y;
+        org.z = self.Origin().z + self.Height() * 0.5f;
+        
+        pos = targ.GetTransformedVector(kVec3(x, y, z));
+        
+        kVec3 dir = pos - org;
+        float dist = dir.Unit();
+        
+        if(dist > (r * GAME_SCALE + self.Radius()))
+        {
+            return;
+        }
+        
+        dir.Normalize();
+        dir *= (1.75f*GAME_SCALE);
+        dir.z = (0.875f*GAME_SCALE);
+        
+        targ.Velocity() += dir;
+        
+        if(targ is Player.Actor().CastToActor())
+        {
+            Player.Actor().Origin().z += GAME_SCALE;
+            Player.Actor().PlayerFlags() |= PF_NOAIRFRICTION;
+            
+            if(!(Player.Actor().ScriptObject() is null))
+            {
+                // WARNING: assumes script object is TurokPlayer
+                TurokPlayer @p = cast<TurokPlayer@>(Player.Actor().ScriptObject().obj);
+                
+                if(p is null)
+                {
+                    return;
+                }
+                
+                p.m_shoveTime = 0.5f;
+                p.m_vShoveVector = org;
+            }
+        }
+    }
+    
+    /*
+    ==============================================================
+    SightSound
+    ==============================================================
+    */
+    
+    void SightSound(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    DeathSound
+    ==============================================================
+    */
+    
+    void DeathSound(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    InjurySound
+    ==============================================================
+    */
+    
+    void InjurySound(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    ViolentSound
+    ==============================================================
+    */
+    
+    void ViolentSound(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    Unused23
+    ==============================================================
+    */
+    
+    void Unused23(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    Unused24
+    ==============================================================
+    */
+    
+    void Unused24(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    Unused60
+    ==============================================================
+    */
+    
+    void Unused60(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    Unused94
+    ==============================================================
+    */
+    
+    void Unused94(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    Unused398
+    ==============================================================
+    */
+    
+    void Unused398(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+    }
+    
+    /*
+    ==============================================================
+    CauseThump
+    ==============================================================
+    */
+    
+    void CauseThump(kActor @instigator, const float r, const float x, const float y, const float z)
+    {
+        kActor @actor = ActorFactory.Spawn("QuakeSource", 0, 0, 0, 0, self.SectorIndex());
+        TurokQuakeSource @quake;
+
+        if(actor is null)
+        {
+            return;
+        }
+
+        @quake = cast<TurokQuakeSource@>(actor.ScriptObject().obj);
+        
+        if(quake is null)
+        {
+            return;
+        }
+
+        quake.SetupThump(self.GetTransformedVector(kVec3(x, y, z)), r);
+    }
+    
+    /*
+    ==============================================================
+    TriggerEvent
+    ==============================================================
+    */
+    
+    void TriggerEvent(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        World.TriggerActorsByTID(instigator, int(w));
+    }
+    
+    /*
+    ==============================================================
+    FootStepPuff
+    ==============================================================
+    */
+    
+    void FootStepPuff(kActor @instigator, const float a, const float x, const float y, const float z)
+    {
+        if(a == 0.0f)
+        {
+            self.SpawnFx("fx/dustcloud_footfall.kfx", kVec3(x, y, z+4.096f));
+        }
+        else
+        {
+            self.SpawnFx("fx/dustcloud_bodyfall.kfx", kVec3(x, y, z+4.096f));
+        }
+    }
+    
+    /*
+    ==============================================================
+    SwishSound
+    ==============================================================
+    */
+    
+    void SwishSound(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.PlaySound("sounds/shaders/knife_swish_1.ksnd");
+    }
+    
+    /*
+    ==============================================================
+    GunFire
+    ==============================================================
+    */
+    
+    void GunFire(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        Sys.Warning("GunFire is being called from base class object!");
+    }
+    
+    /*
+    ==============================================================
+    MeleeVeryWimpy
+    ==============================================================
+    */
+    
+    void MeleeVeryWimpy(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Generic_1", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntWeak
+    ==============================================================
+    */
+    
+    void MeleeBluntWeak(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_3", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntMedium
+    ==============================================================
+    */
+    
+    void MeleeBluntMedium(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_5", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeAttack1
+    ==============================================================
+    */
+    
+    void MeleeAttack1(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Flesh_3", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeAttack2
+    ==============================================================
+    */
+    
+    void MeleeAttack2(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Flesh_5", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeAttack3
+    ==============================================================
+    */
+    
+    void MeleeAttack3(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_5", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntWimpy
+    ==============================================================
+    */
+    
+    void MeleeBluntWimpy(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_2", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntStrong
+    ==============================================================
+    */
+    
+    void MeleeBluntStrong(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_10", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntVeryStrong
+    ==============================================================
+    */
+    
+    void MeleeBluntVeryStrong(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_15", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntHeavy
+    ==============================================================
+    */
+    
+    void MeleeBluntHeavy(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_20", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    MeleeBluntVeryHeavy
+    ==============================================================
+    */
+    
+    void MeleeBluntVeryHeavy(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.MeleeObject("Damage_Blunt_30", kVec3(x, y, z), w);
+    }
+    
+    /*
+    ==============================================================
+    BloodGush
+    ==============================================================
+    */
+    
+    void BloodGush(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        const int count = 3;
+        
+        if((self.Flags() & AF_NOBLOOD) != 0)
+        {
+            return;
+        }
+        
+        kVec3 vel   = self.Velocity();
+        kVec3 pos   = self.GetTransformedVector(kVec3(x, y, z));
+        kVec3 pos_v = pos - vel;
+        kQuat rot   = vel.ToQuat();
+        
+        float f = 0.0f;
+        kVec3 newPos;
+        
+        for(int i = 0; i < count; ++i)
+        {
+            newPos = pos;
+            newPos.Lerp(pos_v, f / 3.0f);
+            
+            Game.SpawnFx("fx/spurt_blood.kfx", self, vel, newPos, rot);
+            f += 1.0f;
+        }
+    }
+    
+    /*
+    ==============================================================
+    TossGib1
+    ==============================================================
+    */
+    
+    void TossGib1(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Alien_Head", org.x, org.y, org.z);
+        Game.SpawnFx("fx/generic_108.kfx", org, self.SectorIndex());
+    }
+    
+    /*
+    ==============================================================
+    TossGib2
+    ==============================================================
+    */
+    
+    void TossGib2(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Alien_Torso", org.x, org.y, org.z);
+        Game.SpawnFx("fx/generic_108.kfx", org, self.SectorIndex());
+    }
+    
+    /*
+    ==============================================================
+    TossGib3
+    ==============================================================
+    */
+    
+    void TossGib3(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Alien_Feet", org.x, org.y, org.z);
+        Game.SpawnFx("fx/generic_108.kfx", org, self.SectorIndex());
+    }
+    
+    /*
+    ==============================================================
+    TossGib4
+    ==============================================================
+    */
+    
+    void TossGib4(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Alien_Body", org.x, org.y, org.z);
+        Game.SpawnFx("fx/generic_108.kfx", org, self.SectorIndex());
+    }
+    
+    /*
+    ==============================================================
+    TossGib5
+    ==============================================================
+    */
+    
+    void TossGib5(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Stalker_Head", org.x, org.y, org.z);
+    }
+    
+    /*
+    ==============================================================
+    TossGib6
+    ==============================================================
+    */
+    
+    void TossGib6(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Stalker_Torso", org.x, org.y, org.z);
+    }
+    
+    /*
+    ==============================================================
+    TossGib7
+    ==============================================================
+    */
+    
+    void TossGib7(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Stalker_Feet", org.x, org.y, org.z);
+    }
+    
+    /*
+    ==============================================================
+    TossGib8
+    ==============================================================
+    */
+    
+    void TossGib8(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        kVec3 org = self.GetTransformedVector(kVec3(x, y, z));
+        TossGib("Gib_Stalker_Body", org.x, org.y, org.z);
+    }
+    
+    /*
+    ==============================================================
+    ExplosionSfx2
+    ==============================================================
+    */
+    
+    void ExplosionSfx2(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+        self.PlaySound("sounds/shaders/explosion_2.ksnd");
+    }
+    
+    /*
+    ==============================================================
+    DropItem
+    ==============================================================
+    */
+    
+    void DropItem(kActor @instigator, const float w, const float x, const float y, const float z)
+    {
+
+        if(Game.GetDifficulty() >= DIFFICULTY_HARD)
+        {
+            // no pickups on hard skills
+            return;
+        }
+        
+        kVec3 org;
+        const uint spawnFlags = self.SpawnFlags2();
+        
+        if(m_bDroppedItem)
+        {
+            return;
+        }
+        
+        org = self.GetTransformedVector(kVec3(x, y, z));
+        m_bDroppedItem = true;
+        
+        if((spawnFlags & 0x1) != 0)
+        {
+            TossItem("Ammo_ExpShells_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x2) != 0)
+        {
+            TossItem("Ammo_Grenade_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x4) != 0)
+        {
+            TossItem("Health_Medium", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x8) != 0)
+        {
+            TossItem("Health_Full", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x10) != 0)
+        {
+            TossItem("Health_Ultra", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x20) != 0)
+        {
+            TossItem("Health_Small", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x40) != 0)
+        {
+            TossItem("Health_Large", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x80) != 0)
+        {
+            TossItem("Ammo_MiniGunAmmo_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x100) != 0)
+        {
+            if(m_bMortallyWounded && Math::RandMax(100) > 85)
+            {
+                TossItem("Health_MortalWound", org.x, org.y, org.z);
+            }
+        }
+        if((spawnFlags & 0x200) != 0)
+        {
+            TossItem("Ammo_Rockets_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x400) != 0)
+        {
+            TossItem("Ammo_Shells_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x800) != 0)
+        {
+            TossItem("Ammo_Cell_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x1000) != 0)
+        {
+            TossItem("Ammo_LargeCell_Pickup", org.x, org.y, org.z);
+        }
+        if((spawnFlags & 0x2000) != 0)
+        {
+            TossItem("Ammo_Clip_Pickup", org.x, org.y, org.z);
+        }
+    }
+    
+    /*
+    ==============================================================
+    OnDeath
+    ==============================================================
+    */
+    
+    void OnDeath(kActor @killer, kDictMem @damageDef)
+    {
+        bool bValue;
+
+        UTAddOn::UT_Addon_Hook_EnemyKilled(killer, self);
+
+        if(damageDef is null)
+        {
+            return;
+        }
+        
+        m_bDroppedItem = false;
+        
+        if(damageDef.GetBool("bAccelerator", bValue) && bValue == true)
+        {
+            self.AnimState().flags |= (ANF_PAUSED|ANF_NOINTERRUPT);
+            m_deathFreezeTime = 3.0f;
+            self.RunFxEvent("Enemy_Freeze");
+            Game.SpawnFx("fx/freeze_start.kfx", self.Origin(), self.SectorIndex());
+        }
+    }
+
+};

@@ -1,0 +1,173 @@
+UTA_Test 21222
+{
+    classname                   "kexAI"
+    gravity                     0.5
+    health                      14
+    friction                    0.5
+    radius                      40.96
+    height                      71.68
+    wallRadius                  40.96
+    stepHeight                  30.72
+    impactType                  4
+    modelVariation              1
+    clipFlag.useWallRadius      1
+    clipFlag.edges              1
+    clipFlag.noEnterWater       1
+    clipFlag.collideFloors      1
+    clipFlag.collideHeight      1
+    clipFlag.greaseSlideObjects 1
+    flags.destroyInWater        1
+    flags.seeTargetInWater      1
+    flags.alignToFloor          1
+    flags.allowTinyEnemyCheat   1
+    ai.desiredYawSpeed          1.0
+    ai.meleeRange               81.92
+    ai.attackRange              614.4
+    ai.attackChance             100
+    ai.activeDistance           1126.0
+    ai.discoDances              1
+    headTrackDefinition         "HeadTrack_Human"
+    footStepSound               "FootStep_Common"
+    scriptClass                 "TurokGrunt"
+    defaultEditorModel          "models/dyn_human_grunt01.bin"
+    defaultEditorAnim           "anims/dyn_human_grunt01_anim.bin"
+	
+    initialModel                "models/dyn_human_grunt01.bin"
+    initialAnim                 "anims/dyn_human_grunt01_anim.bin"
+	
+	spawnFlags1					524288
+	spawnFlags2					0
+	spawnFlags3					0
+
+}
+
+UTA_LifeForce_2_Silent 24382
+{
+    classname                   "kexLifeForcePickup"
+    radius                      71.68
+    height                      71.68
+    center                      30.72
+    stepHeight                  25.72
+    pickup.lifeforce.amount     2
+    initialModel                "models/lifeforce_1.bin"
+}
+
+UTA_Plane 21224
+{
+	classname               	"kexActor"
+    flags.noMovement        	1
+	flags.alignToFloor          0
+    flags.noBlood               1
+    flags.allowTinyEnemyCheat   0
+    clipFlag.edges              0
+    clipFlag.dropOff            0
+    clipFlag.noExitWater        0
+    clipFlag.noStepDown         1
+    clipFlag.collideHeight      0
+    clipFlag.greaseSlideObjects 0
+    defaultEditorModel      "UTAddOn/models/uta_hud_plane.bin"
+    defaultEditorAnim       ""
+	
+	initialModel            "UTAddOn/models/uta_hud_plane.bin"
+    initialAnim             ""
+}
+
+UTA_KillSpreeStatusIcon 23571
+{
+	classname               	"kexActor"
+    flags.noMovement        	1
+	flags.alignToFloor          0
+    flags.noBlood               1
+    flags.allowTinyEnemyCheat   0
+    clipFlag.edges              0
+    clipFlag.dropOff            0
+    clipFlag.noExitWater        0
+    clipFlag.noStepDown         1
+    clipFlag.collideHeight      0
+    clipFlag.greaseSlideObjects 0
+    defaultEditorModel      "UTAddOn/models/uta_hud_killspree.bin"
+    defaultEditorAnim       ""
+	
+	initialModel            "UTAddOn/models/uta_hud_killspree.bin"
+    initialAnim             ""
+}
+
+UTA_KillStreakStatusBar 23572
+{
+	classname               	"kexActor"
+    flags.noMovement        	1
+	flags.alignToFloor          0
+    flags.noBlood               1
+    flags.allowTinyEnemyCheat   0
+    clipFlag.edges              0
+    clipFlag.dropOff            0
+    clipFlag.noExitWater        0
+    clipFlag.noStepDown         1
+    clipFlag.collideHeight      0
+    clipFlag.greaseSlideObjects 0
+    defaultEditorModel      "UTAddOn/models/uta_hud_killstreak_bar.bin"
+    defaultEditorAnim       ""
+	
+	initialModel            "UTAddOn/models/uta_hud_killstreak_bar.bin"
+    initialAnim             ""
+}
+
+UTA_Generic_Quad_Plane 23573
+{
+	classname               	"kexActor"
+    flags.noMovement        	1
+	flags.alignToFloor          0
+    flags.noBlood               1
+    flags.allowTinyEnemyCheat   0
+    clipFlag.edges              0
+    clipFlag.dropOff            0
+    clipFlag.noExitWater        0
+    clipFlag.noStepDown         1
+    clipFlag.collideHeight      0
+    clipFlag.greaseSlideObjects 0
+    defaultEditorModel      "UTAddOn/models/uta_hud_generic_quad_plane.bin"
+    defaultEditorAnim       ""
+	
+	initialModel            "UTAddOn/models/uta_hud_generic_quad_plane.bin"
+    initialAnim             ""
+}
+
+UTA_Generic_Quad_Plane_Blend 23574
+{
+	classname               	"kexActor"
+    flags.noMovement        	1
+	flags.alignToFloor          0
+    flags.noBlood               1
+    flags.allowTinyEnemyCheat   0
+    clipFlag.edges              0
+    clipFlag.dropOff            0
+    clipFlag.noExitWater        0
+    clipFlag.noStepDown         1
+    clipFlag.collideHeight      0
+    clipFlag.greaseSlideObjects 0
+    defaultEditorModel      "UTAddOn/models/uta_hud_generic_quad_plane_blend.bin"
+    defaultEditorAnim       ""
+	
+	initialModel            "UTAddOn/models/uta_hud_generic_quad_plane_blend.bin"
+    initialAnim             ""
+}
+
+UTA_Generic_Quad_Plane_GFX 23575
+{
+	classname               	"kexActor"
+    flags.noMovement        	1
+	flags.alignToFloor          0
+    flags.noBlood               1
+    flags.allowTinyEnemyCheat   0
+    clipFlag.edges              0
+    clipFlag.dropOff            0
+    clipFlag.noExitWater        0
+    clipFlag.noStepDown         1
+    clipFlag.collideHeight      0
+    clipFlag.greaseSlideObjects 0
+    defaultEditorModel      "UTAddOn/models/uta_hud_generic_quad_plane_gfx.bin"
+    defaultEditorAnim       ""
+	
+	initialModel            "UTAddOn/models/uta_hud_generic_quad_plane_gfx.bin"
+    initialAnim             ""
+}

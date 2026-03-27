@@ -1,0 +1,212 @@
+#include "UTAddOn/scripts/ut_helper.txt"
+
+namespace UTAddOn
+{
+
+enum UT_Difficulty
+{
+    UTA_DIFF_OFF = 0,
+    UTA_DIFF_BABY = 10,
+    UTA_DIFF_EASY = 25,
+    UTA_DIFF_NORMAL = 50,
+    UTA_DIFF_HARD = 75,
+    UTA_DIFF_HARDCORE = 100
+}
+
+
+// Dynamic gameplay settings
+class UT_GamePlaySettings
+{
+    bool enableDamage = true;
+    bool enableAchievements = true;
+    bool enableHealing = true;
+    bool enableArmorHealing = true;
+    bool enableHud = true;
+    float maxHealRate = 1.0f / 10.0f;
+}
+UT_GamePlaySettings g_gamePlaySettings; // Global variable for settings storage
+
+
+// Constant parameters, not intended to be changed during game
+class UT_GamePlayParameters
+{
+    float par_streakDuration = 3.0;
+    int par_initialMaxHealth = 100;
+    int par_initialMaxArmor = 5;
+    int par_upperBoundHealth = 250;
+    int par_upperBoundArmor = 50;
+}
+const UT_GamePlayParameters g_gamePlayParams;   // Global (const) variable for parameter access
+
+
+// Data, which is needed to be stored (and loaded) in save files
+class UT_SaveData
+{
+    int maxHealHealth = 100;
+    int maxHealArmor = 5;
+    int difficulty = UTA_DIFF_NORMAL;
+    array<int> killStreakCounter(9, 0);
+    //int killSpreeCounter = 0;
+
+    void InitSaveData()
+    {
+        if(!GameVariables.HasKey("UTAddOn_save_maxHealth"))
+        {
+            GameVariables.Add("UTAddOn_save_maxHealth", "" + g_gamePlayParams.par_initialMaxHealth);
+        }
+        if(!GameVariables.HasKey("UTAddOn_save_maxArmor"))
+        {
+            GameVariables.Add("UTAddOn_save_maxArmor", "" + g_gamePlayParams.par_initialMaxArmor);
+        }
+        if(!GameVariables.HasKey("UTAddOn_save_difficulty"))
+        {
+            GameVariables.Add("UTAddOn_save_difficulty", "" + UTA_DIFF_NORMAL);
+        }
+        /*if(!GameVariables.HasKey("UTAddOn_save_killSpreeCounter"))
+        {
+            GameVariables.Add("UTAddOn_save_killSpreeCounter", "" + killSpreeCounter);
+        }*/
+
+        for(int i = 0; i < 9; i++)
+        {
+            kStr varName = "UTAddOn_save_killcount_" + (i + 1);
+            if(!GameVariables.HasKey(varName))
+            {
+                GameVariables.Add(varName, "" + killStreakCounter[i]);
+            }   
+        }
+    }
+
+    void LoadSaveData()
+    {
+        // Don't use variables in place of the third parameter! It will frak up ...
+        GameVariables.GetInt("UTAddOn_save_maxHealth", maxHealHealth, 100);    
+        GameVariables.GetInt("UTAddOn_save_maxArmor", maxHealArmor, 5);
+        GameVariables.GetInt("UTAddOn_save_difficulty", difficulty, 50);
+        //GameVariables.GetInt("UTAddOn_save_killSpreeCounter", killSpreeCounter, 0);
+
+        Warn("Loaded variables:");
+        Warn("- maxHealth: " + maxHealHealth);
+        Warn("- maxArmor: " + maxHealArmor);
+        Warn("- difficulty: " + difficulty);
+        //Warn("- nKillSpree: " + killSpreeCounter);
+
+        LoadIntArray(killStreakCounter, "UTAddOn_save_killcount_", "- killcount");
+        g_killCounter = killStreakCounter[0];   // Update global killcounter
+        
+    }
+
+    void UpdateSaveData()
+    {
+        InitSaveData(); // Add missing variables; may occur with older save states (and then SetValue will do nothing)
+
+        GameVariables.SetValue("UTAddOn_save_maxHealth", "" + maxHealHealth);
+        GameVariables.SetValue("UTAddOn_save_maxArmor", "" + maxHealArmor);
+        GameVariables.SetValue("UTAddOn_save_difficulty", "" + difficulty);
+        //GameVariables.SetValue("UTAddOn_save_killSpreeCounter", "" + killSpreeCounter);
+
+        Warn("Saved variables:");
+        Warn("- maxHealth: " + maxHealHealth);
+        Warn("- maxArmor: " + maxHealArmor);
+        Warn("- difficulty: " + difficulty);
+        //Warn("- nKillSpree: " + killSpreeCounter);
+
+        killStreakCounter[0] = g_killCounter;   // Update first array element with killcount
+        SaveIntArray(killStreakCounter, "UTAddOn_save_killcount_", "- killcount");
+
+    }
+
+
+    void LoadIntArray(array<int> &inout intAr, kStr strVarPrefix, kStr strDebugInfo)
+    {
+        int nElem = intAr.length();
+        kStr strDebug = strDebugInfo + ": ";
+        for(int i = 0; i < nElem; i++)
+        {
+            kStr varName = strVarPrefix + (i + 1);
+            GameVariables.GetInt(varName, intAr[i], 0); // Default value must(!) be hard-coded to some value (so zero)
+            strDebug += "" + intAr[i];
+            if(i + 1 < nElem)
+            {
+                strDebug += ", ";
+            }
+        }
+        Warn(strDebug);
+    }
+    void SaveIntArray(array<int> &inout intAr, kStr strVarPrefix, kStr strDebugInfo)
+    {
+        int nElem = intAr.length();
+        kStr strDebug = strDebugInfo + ": ";
+        for(int i = 0; i < nElem; i++)
+        {
+            kStr varName = strVarPrefix + (i + 1);
+            GameVariables.SetValue(varName, "" + intAr[i]);
+            strDebug += "" + intAr[i];
+            if(i + 1 < nElem)
+            {
+                strDebug += ", ";
+            }
+        }
+        Warn(strDebug);
+    }
+
+}
+UT_SaveData g_saveData; // Global variable for save data storage
+
+
+// This function must be called to correctly change the UTAddOn difficulty
+void ChangeDifficultySetting(int difficulty)
+{
+    switch(difficulty)
+    {
+        case UTA_DIFF_OFF:
+            g_gamePlaySettings.enableDamage = false;
+            g_gamePlaySettings.enableHealing = false;
+            g_gamePlaySettings.enableArmorHealing = false;
+            g_gamePlaySettings.enableAchievements = false;
+            g_gamePlaySettings.maxHealRate = 1.0f;
+            break;
+        case UTA_DIFF_BABY:
+            g_gamePlaySettings.enableDamage = false;
+            g_gamePlaySettings.enableHealing = true;
+            g_gamePlaySettings.enableArmorHealing = true;
+            g_gamePlaySettings.enableAchievements = true;
+            g_gamePlaySettings.maxHealRate = 0.0f;
+            break;
+        case UTA_DIFF_EASY:
+            g_gamePlaySettings.enableDamage = true;
+            g_gamePlaySettings.enableHealing = true;
+            g_gamePlaySettings.enableArmorHealing = true;
+            g_gamePlaySettings.enableAchievements = true;
+            g_gamePlaySettings.maxHealRate = 1.0f / 10.0f;
+            break;
+        case UTA_DIFF_NORMAL:
+            g_gamePlaySettings.enableDamage = true;
+            g_gamePlaySettings.enableHealing = true;
+            g_gamePlaySettings.enableArmorHealing = false;
+            g_gamePlaySettings.enableAchievements = true;
+            g_gamePlaySettings.maxHealRate = 1.0f / 5.0f;
+            break;
+        case UTA_DIFF_HARD:
+            g_gamePlaySettings.enableDamage = true;
+            g_gamePlaySettings.enableHealing = false;
+            g_gamePlaySettings.enableArmorHealing = false;
+            g_gamePlaySettings.enableAchievements = true;
+            g_gamePlaySettings.maxHealRate = 10.0f;
+            break;
+        case UTA_DIFF_HARDCORE:
+            g_gamePlaySettings.enableDamage = true;
+            g_gamePlaySettings.enableHealing = false;
+            g_gamePlaySettings.enableArmorHealing = false;
+            g_gamePlaySettings.enableAchievements = false;
+            g_gamePlaySettings.maxHealRate = 10.0f;
+            break;
+        default:
+            Warn("Unexpected difficulty: " + difficulty);
+    }
+
+    g_saveData.difficulty = difficulty;
+    g_saveData.UpdateSaveData();
+}
+
+}   // NS: UTAddOn

@@ -1,0 +1,71 @@
+//
+// Copyright(C) 2014-2015 Samuel Villarreal
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// DESCRIPTION:
+//      Turret Object Class
+//
+
+#include "scripts/common.txt"
+#include "UTAddOn/scripts/ut_eventshandler.txt"
+
+//-----------------------------------------------------------------------------
+//
+// Turret
+//
+//-----------------------------------------------------------------------------
+
+/*
+==============================================================
+TurokTurret
+==============================================================
+*/
+
+final class TurokTurret : TurokEnemy
+{
+    TurokTurret(kActor @actor)
+    {
+        super(actor);
+    }
+    
+    /*
+    ==============================================================
+    OnTick
+    ==============================================================
+    */
+    
+    void OnTick(void)
+    {
+        if((self.Flags() & AF_DEAD) != 0)
+        {
+            self.Pitch() = self.Pitch().Interpolate(Math::Deg2Rad(45.0f), 0.125f);
+        }
+    }
+    
+    /*
+    ==============================================================
+    OnDeath
+    ==============================================================
+    */
+    
+    void OnDeath(kActor @killer, kDictMem @damageDef)
+    {
+        UTAddOn::UT_Addon_Hook_EnemyKilled(killer, self);
+        
+        self.SpawnFx("fx/explosion.kfx", kVec3(0, 0, 0));
+        
+        for(int i = 0; i < 4; ++i)
+        {
+            self.SpawnFx("fx/freeze_start.kfx", kVec3(0, 0, 0).Randomize(1.0f) * 61.44f);
+        }
+    }
+}

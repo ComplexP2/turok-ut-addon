@@ -1,0 +1,206 @@
+
+namespace UTAddOn
+{
+    
+
+// =============
+// UT_Queue_vec3
+// =============
+class UT_Queue_vec3
+{
+    array<kVec3> data;
+    
+    UT_Queue_vec3()
+    {
+        Clear();
+    }
+
+    void Clear()
+    {
+        data.resize(0);
+    }
+
+    int Size()
+    {
+        return data.length();
+    }
+
+    kVec3 At(int index)
+    {
+        return data[index];
+    }
+
+    void Push(kVec3 newElem)
+    {
+        data.insertLast(newElem);
+    }
+
+    bool Pop(kVec3 &out elem)
+    {
+        if(data.length() > 0)
+        {
+            elem = data[0];
+            data.removeAt(0);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+
+// ============
+// UT_Queue_int
+// ============
+class UT_Queue_int
+{
+    array<int> data;
+    
+    UT_Queue_int()
+    {
+        Clear();
+    }
+
+    void Clear()
+    {
+        data.resize(0);
+    }
+
+    int Size()
+    {
+        return data.length();
+    }
+
+    void Push(int newElem, bool unique = false, bool asNext = false)
+    {
+        // Don't add if entry already exists
+        if(unique)
+        {
+            bool wasFound = false;
+            int nFrak = data.length();
+            for(int i = 0; i < nFrak; i++)
+            {
+                if(data[i] == newElem)
+                {
+                    wasFound = true;
+                    break;
+                }
+            }
+            if(wasFound)
+            {
+                return;
+            }
+        }
+
+        // Add as next popping value (or in queue as usual)
+        if(asNext)
+        {
+            data.insertAt(0, newElem);
+        }
+        else
+        {
+            data.insertLast(newElem);
+        }
+    }
+
+    bool Pop(int &out elem)
+    {
+        if(data.length() > 0)
+        {
+            elem = data[0];
+            data.removeAt(0);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+}
+
+
+// ==================
+// UT_Array_TempActor
+// ==================
+
+class UT_TemporaryActor
+{
+    kActor @actorRef = null;
+    float lifeTime_s = 0;
+}
+
+class UT_Array_TempActor
+{
+    array<UT_TemporaryActor> data;
+    
+    UT_Array_TempActor()
+    {
+        Clear();
+    }
+
+    void Clear()
+    {
+        for(int i = data.length()-1; i >= 0; i--)
+        {
+            DropItem(i);
+        }
+        data.resize(0);
+    }
+
+    int Size()
+    {
+        return data.length();
+    }
+
+    void Push(UT_TemporaryActor newElem)
+    {
+        data.insertLast(newElem);
+    }
+
+    void DropItem(int index)
+    {
+        kActor @actor = data[index].actorRef;
+
+        Warn("DropItem Begin -----");
+        if(!(actor is null) && !actor.IsStale())
+        {
+            if(actor.Type() >= 400 && actor.Type() <= 404)
+            {
+                // Spawn "despawn" FX effect at item location and remove it
+                kVec3 spawnPos = actor.Origin() + kVec3(0,0,actor.Height()/2.0);
+                Warn("Spawning despawn-FX at position: " + Str(spawnPos));
+
+                Game.SpawnFx("fx/generic_260.kfx", spawnPos, actor.SectorIndex());
+
+                Warn("Dropping item at index: " + index + " (" + Size() + " items total)");
+                data[index].actorRef.Remove();
+            }
+            else
+            {
+                Warn("Actor type is strange: " + actor.Type());
+            }
+        }
+        Warn("Setting null at index: " + index);
+        @data[index].actorRef = null;
+        Warn("Removing at index: " + index);
+        data.removeAt(index);
+        Warn("DropItem DONE =====");
+    }
+
+    void Update(float deltaTime)
+    {
+        for(int i = data.length()-1; i >= 0; i--)
+        {
+            data[i].lifeTime_s -= deltaTime;
+            if(data[i].lifeTime_s < 0.0)
+            {
+                DropItem(i);
+            }
+        }
+    }
+
+}
+
+}   // NS: UTAddOn

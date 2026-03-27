@@ -1,0 +1,1234 @@
+#include "UTAddOn/scripts/ut_helper.txt"
+
+namespace UTAddOn
+{
+
+// Properties of the generic plane object that is used to display HUD elements
+const float fac = 1.0/(2*439.0);  // Generic quadratic plane size normalization factor
+const kQuat generic_plane_rot = kQuat(Math::pi, ey) * kQuat(-Math::pi/2, ex);
+
+// Texture group offsets
+const int tex_offset_gfx_WeaponBlack = 14;
+const int tex_offset_gfx_HudElements = 28;
+const int tex_offset_gfx_HudBars = 34;
+const int tex_offset_gfx_Numbers = 38;
+
+// Minimal hud element z-distance
+const float hud_zOff = 0.0f;
+
+
+enum UT_tex_black_variants
+{
+    UTA_HUD_TEX_BLACK = 0,
+    UTA_HUD_TEX_GREEN = 1,
+    UTA_HUD_TEX_YELLOW = 2,
+    UTA_HUD_TEX_RED = 3,
+    UTA_HUD_TEX_DARK_RED = 4,
+    UTA_HUD_TEX_ARMOR_EFFECT_1 = 5,
+    UTA_HUD_TEX_ARMOR_EFFECT_2 = 6,
+    UTA_HUD_TEX_DAMAGE_EFFECT_1 = 7,
+    UTA_HUD_TEX_DAMAGE_EFFECT_2 = 8,
+    UTA_HUD_TEX_DAMAGE_EFFECT_3 = 9
+}
+
+enum UT_animation_index
+{
+    UTA_HUD_ANIM_DMG = 0,
+    UTA_HUD_ANIM_DMG_ARMOR = 1,
+
+    UTA_HUD_ANIM_ARRAYSIZE
+}
+
+enum UT_numberplate
+{
+    UTA_HUD_NUM_HEALTH,
+    UTA_HUD_NUM_ARMOR,
+    UTA_HUD_NUM_AMMO,
+
+    UTA_HUD_NUM_ARRAYSIZE
+}
+
+class UT_Hud_Data
+{
+    int killStreak_count = 0;
+    float killStreak_perc = 0;
+    int killSpree_count = 0;
+    int killSpree_remainder = 0;
+    int health = 0;
+    int health_heal = 0;
+    int health_max = 0;
+    int armor = 0;
+    int armor_heal = 0;
+    int armor_max = 0;
+    bool isBossFight = false;
+    kActor @bossActor = null;
+    int bossHealth = 0;
+    int bossInitialHealth = 0;
+}
+
+class UT_Hud_Elements
+{
+    kStr strCOMP = "Hud::Elements";
+
+    array<kActor@> actors;
+
+    UT_Hud_Elements()
+    {
+    }
+
+    void Clear()
+    {
+        int n = actors.length();
+        for(int i = 0; i < n; i++)  // use variable n here or the sht will crash
+        {
+            @actors[i] = null;
+        }
+        actors.resize(0);
+    }
+}
+
+class UT_Hud_VideoSettings
+{
+    float fov = 90.0f;
+    int screenW = 1280;
+    int screenH = 720;
+    float ratio_W_H = 16.0f/9.0f;
+    float ratio_H_z = 1.0;
+    float minClipDist = 0.2f;   // heuristic value
+}
+
+class UT_Hud_Timer
+{
+    bool isEnabled = false;
+    int time = 0;
+    int duration = 0;
+}
+
+
+
+// ==========
+// HUD Mapper
+// ==========
+// Computes world coordinates and orientations for plane objects
+// which are specified in HUD coordinates
+
+const float facHudCoord = 1000.0f;  // Number in "hud coordinates" which corresponds to 50% "screen size"
+
+// HUD Coordinate system:
+//
+// --------------------------------------------------------
+// |                     facHudCoord (y+)                 |
+// |                           |                          |
+// |                           |                          |
+// |                           |                          |
+// | -facHudCoord (x-) ------- 0 ------- facHudCoord (x+) |
+// |                           |                          |
+// |                           |                          |
+// |                           |                          |
+// |                    -facHudCoord (y-)                 |
+// --------------------------------------------------------
+//
+// Note: width/height ratio is applied in helper functions
+
+class UT_Hud_Mapper
+{
+    kStr strCOMP = "Hud::Mapper";
+
+    kVec3 basePos_;
+    kQuat baseRot_;
+    kQuat climbRot_ = kQuat(0, ex);
+    UT_Hud_VideoSettings videoSettings_;
+
+    UT_Hud_Mapper()
+    {
+    }
+
+    void Init()
+    {
+        GenerateVideoSettings();
+    }
+
+    void GenerateVideoSettings()
+    {
+        // Get FOV
+        kStr strFOV;
+        if(Sys.GetCvarValue("r_fov", strFOV))
+        {
+            videoSettings_.fov = Math::Deg2Rad(strFOV.Atof());
+        }
+        else
+        {
+            videoSettings_.fov = Math::Deg2Rad(74.0f);
+        }
+
+        // Get screen resolution setting
+        videoSettings_.screenW = Sys.VideoWidth();
+        videoSettings_.screenH = Sys.VideoHeight();
+
+        // Compute helper values
+        videoSettings_.ratio_W_H = float(videoSettings_.screenW) / float(videoSettings_.screenH);
+        videoSettings_.ratio_H_z = 2 * Math::Tan(videoSettings_.fov / 2.0f);
+        // Note: z-value * ratio_H_z gives the vertical screen size in "game units" (z-value is in "game units")
+    }
+
+    UT_Hud_VideoSettings GetVideoSettings()
+    {
+        return videoSettings_;
+    }
+
+
+    // Compute the camera origin position and orientation
+    void PreComputeHudPosParams()
+    {
+        // Compute player actor dependent hud origin position and orientation
+
+        kPuppet @pPuppet = Player.Actor();
+
+        // Orientation in "look forward" direction
+        baseRot_ = pPuppet.Rotation() * kQuat(pPuppet.RecoilPitch(), ex);
+
+        // Camera origin position in world coords
+        float zOffset = pPuppet.ViewHeight() + pPuppet.LandingViewOffset(); // Originate from eye position
+        basePos_ = pPuppet.Origin() + ez * zOffset;
+    }
+
+    // Compute the object scale in world coordinates based on the given 
+    // HUD coordinates and z-distance
+    kVec3 ScreenScaleToWorldScale(float z, float hudW, float hudH)
+    {
+        // hudW/H = 2*facHudCoord * percentage of screen size
+        // z is already given in world units and is interpreted as z-position in cam coordinates
+
+        kVec3 scale;
+
+        float zOff = z + hud_zOff;
+       
+        float sf = zOff * videoSettings_.ratio_H_z / facHudCoord / 2.0f;
+
+        scale.x = sf * hudW * videoSettings_.ratio_W_H;
+        scale.y = sf * hudH;
+        scale.z = 1.0f;
+
+        return scale;
+    }
+
+    // Compute the position in camera coordinates of an object 
+    // based on it's HUD coordinates and z-distance
+    kVec3 ScreenPosToCamPos(float z, float hudX, float hudY)
+    {
+        // hudX/Y = hud coordinates = 2*facHudCoord * percentage of screen size
+        // z is interpreted as z-position in cam coordinates in world units
+
+        kVec3 camPos;
+
+        float zOff = z + hud_zOff;
+
+        float sf = zOff * videoSettings_.ratio_H_z / facHudCoord / 2.0f;
+
+        camPos.x = sf * hudX * videoSettings_.ratio_W_H;
+        camPos.z = sf * hudY;
+        camPos.y = zOff;
+
+        return camPos;
+    }
+
+
+    // Position the given actor in the world and compute it's orientation,
+    // based on the given HUD coordinates, scales and z-distance
+    void PositionHudElement(kActor @elem, float z, float hudX, float hudY, float hudW, float hudH, kQuat elemRot)
+    {
+        kVec3 cpos = ScreenPosToCamPos(z, hudX, hudY);
+        kVec3 scale = ScreenScaleToWorldScale(z, hudW, hudH);
+
+        PositionHUDActor(elem, cpos, elemRot);
+        elem.Scale().Set(scale.x*fac,scale.y*fac, scale.z);
+    }
+
+
+    // OLD positioning function!
+    // TODO: Refactor all references and then move the code of this function
+    //       to PositionHudElement
+    void PositionHUDActor(kActor @actor, kVec3 camPos, kQuat rot)
+    {
+        kVec3 vDir = camPos * climbRot_ * baseRot_;
+        actor.SetPosition(basePos_ + vDir);
+        actor.Rotation() = Player.Actor().Rotation() * climbRot_ * rot;
+    }
+    // TODO: Refactor references to this function and then delete it!
+    kVec3 HudPositionToWorldPosition(kVec3 hudPosition)
+    {
+        kVec3 vDir = hudPosition * baseRot_;
+        return basePos_ + vDir;
+    }
+
+}
+
+
+// ==================
+// UT_Hud_Numberplate
+// ==================
+// Generic class to display an N-digit number
+class UT_Hud_Numberplate
+{
+    kStr strCOMP = "Hud::Numberplate";
+
+    int nDigits_ = 0;
+    array<kActor@> actors_;
+
+    UT_Hud_Numberplate(int digits)
+    {
+        nDigits_ = digits;
+    }
+
+    void Init()
+    {
+        if(nDigits_ < 1)
+        {
+            Warn(strCOMP, "Numberplate with zero digits is ignored");
+            return;
+        }
+
+        actors_.resize(0);
+        for(int i = 0; i < nDigits_; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(fac, fac, 1.0f);
+            actors_.insertLast(temp);
+        }
+    }
+
+    void Invalidate()
+    {
+        actors_.resize(0);
+    }
+
+    void Update(int number, float gap, float z, float hudX, float hudY, float hudW, float hudH, UT_Hud_Mapper &HMap)
+    {
+        // Hard-coded: align left and center-y
+        float DW = hudW / nDigits_;
+
+        int num = Max(0, number);
+        for(int i = 0; i < nDigits_; i++)
+        {
+            kActor @temp = actors_[i];
+            // hudX + DW/2 | + DW + gap | + DW + gap | ...
+            // -> reversed order: (nDigits_ - 1 - i)
+            float posDX = hudX + DW / 2.0f + (nDigits_ - 1 - i) * (DW + gap);
+
+            int digit = (num % 10);
+            num = (num - digit) / 10;
+            if(digit == 0 && num == 0 && i > 0)
+            {
+                // Don't show leading zeros (except one)
+                temp.RenderModel().SetVisibility(0, false);
+            }
+            else
+            {
+                // Show digit
+                HMap.PositionHudElement(temp, z, posDX, hudY, DW, hudH, generic_plane_rot);
+                temp.RenderModel().SetTexture(0, tex_offset_gfx_Numbers + digit);
+                temp.RenderModel().SetVisibility(0, true);
+            }
+        }
+    }
+
+}
+
+
+// 0: knife(0), bow(1)
+// 1: pistol (2)
+// 2: shotgun (3), autoshot (4)
+// 3: rifle(5)
+// 4: plasma (6), minigun (7)
+// 5: grenade (8)
+// 6: alien(9), missile(10)
+// 7: charge (11), fusion (12)
+// 8: chrono (13)
+const array<int> weaponSlotMapping = {0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8};
+const array<int> slotWeaponMapping1 = {0, 2, 3, 5, 6, 8,  9, 11, 13};
+const array<int> slotWeaponMapping2 = {1, 2, 4, 5, 7, 8, 10, 12, 13};
+const array<int> slotStackID        = {1, 0, 2, 0, 3, 0,  4,  5,  0};
+const array<int> slotAltAmmoID      = {1, 0, 2, 0, 0, 0 , 0,  0,  0};
+
+array<int> g_maxAmmo    = {0, 30, 200, 40, 40, 200, 100, 500, 30, 100, 12, 100, 3, 3};
+array<int> g_maxAltAmmo = {0, 15,   0, 20, 20,   0,   0,   0,  0,   0,  0,   0, 0, 0};
+
+const int nElems_fullscreenFX = 2;
+const int nElems_weaponGFX = 9;
+const int nElems_weaponsStacked = 5;
+const int nElems_weaponAmmo = 9;
+const int nElems_weaponAltAmmo = 2;
+const int nElems_healthDisp = 6;
+const int nElems_armorDisp = 5;
+
+
+// ======
+// UT_Hud
+// ======
+class UT_Hud
+{
+    kStr strCOMP = "Hud";
+
+    // Members
+    // =======
+
+    UT_Hud_Data hud_data_;
+
+    UT_Hud_Elements elems_fullscreenFX_;
+    array<int> texOff_hit_damage_level(2, 0);
+
+    UT_Hud_Elements elems_weaponGFX_;
+    UT_Hud_Elements elems_weaponBgGFX_;
+    UT_Hud_Elements elems_weaponBgStackGFX_;
+    UT_Hud_Elements elems_weaponAmmoBar_;
+    UT_Hud_Elements elems_weaponAltAmmoBar_;
+    kActor@ elem_bossBar_ = null;
+
+    UT_Hud_Elements elems_healthDisp_;
+    UT_Hud_Numberplate elem_num_health_(3);
+
+    UT_Hud_Elements elems_armorDisp_;
+    UT_Hud_Numberplate elem_num_armor_(3);
+
+    UT_Hud_Numberplate elem_num_ammo_(3);
+
+    array<UT_Hud_Timer> animationTimers_;
+
+    UT_Hud_VideoSettings videoSettings_;
+    UT_Hud_Mapper HMap_;
+
+kActor @test = null;
+kActor @test2 = null;
+
+    kActor @kstreakBar_ = null;
+
+    bool isInitialized_ = false;
+
+int tmpCounter = 0;
+
+    // Constructor
+    // ===========
+    UT_Hud()
+    {
+        @test = null;
+        @test2 = null;
+        @kstreakBar_ = null;
+    }
+
+
+    // Initialization
+    // ==============
+
+    void Init()
+    {
+        Log(strCOMP, "Init begin ...");
+
+        // Init mapper object and get video settings
+        // ------------------
+        HMap_.Init();
+        videoSettings_ = HMap_.GetVideoSettings();
+
+        
+
+        // Init timers
+        // -----------
+        animationTimers_.resize(UTA_HUD_ANIM_ARRAYSIZE);
+
+
+        // Create UI elements
+        // ------------------
+        @test = ActorFactory.Spawn("UTA_KillSpreeStatusIcon", 0,0,0, 0, Player.Actor().SectorIndex());
+        test.Scale().Set(2*fac, 2*fac, 1.0f);
+        //test.Scale().Set(0.048f, 0.027f, 1.0f);
+        test.RenderModel().SetTexture(0, 0);
+
+        @test2 = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+        //@test2 = ActorFactory.Spawn("UTA_Plane", 0,0,0, 0, Player.Actor().SectorIndex());
+        test2.Scale().Set(2*fac, 2*fac, 1.0f);
+        test2.RenderModel().SetTexture(0, 0);
+
+        @kstreakBar_ = ActorFactory.Spawn("UTA_KillStreakStatusBar", 0,0,0, 0, Player.Actor().SectorIndex());
+        kstreakBar_.Scale().Set(fac, fac, 1.0f);
+        kstreakBar_.RenderModel().SetTexture(0, 0);
+
+        @elem_bossBar_ = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+        elem_bossBar_.Scale().Set(fac, fac, 1.0f);
+        elem_bossBar_.RenderModel().SetTexture(0, tex_offset_gfx_HudBars);
+
+        //Init_UI_Healthbar();
+        Init_UI_FullscreenFX();
+        Init_UI_WeaponGFX();
+        Init_UI_HealthDisplay();
+
+        // Init other number displays
+        elem_num_ammo_.Init();
+
+        Log(strCOMP, "Init END");
+        isInitialized_ = true;
+    }
+
+
+    // Healthdisplay objects
+    // ---------------------
+    void Init_UI_HealthDisplay()
+    {
+        // Health number display
+        elem_num_health_.Init();
+
+        // 6 different health display elements
+        elems_healthDisp_.Clear();
+        for(int i = 0; i < nElems_healthDisp; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(fac, fac, 1.0f);
+            elems_healthDisp_.actors.insertLast(temp);
+        }
+
+        // Armor number display
+        elem_num_armor_.Init();
+
+        // 5 different armor display elements
+        elems_armorDisp_.Clear();
+        for(int i = 0; i < nElems_armorDisp; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(fac, fac, 1.0f);
+            elems_armorDisp_.actors.insertLast(temp);
+        }
+
+    }
+
+    // Fullscreen objects
+    // ------------------
+    void Init_UI_FullscreenFX()
+    {
+        elems_fullscreenFX_.Clear();
+        for(int i = 0; i < nElems_fullscreenFX; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_Blend", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(16*fac, 9*fac, 1.0f);
+            switch(i)
+            {
+                case UTA_HUD_ANIM_DMG: temp.RenderModel().SetTexture(0, UTA_HUD_TEX_DAMAGE_EFFECT_1); break;
+                case UTA_HUD_ANIM_DMG_ARMOR: temp.RenderModel().SetTexture(0, UTA_HUD_TEX_ARMOR_EFFECT_1); break;
+            }
+            elems_fullscreenFX_.actors.insertLast(temp);
+
+        }
+    }
+
+    // Weapon graphics
+    // ---------------
+    void Init_UI_WeaponGFX()
+    {
+
+        // 9 Weapon slots (with a bg image, wp image and ammo bar each)
+        elems_weaponGFX_.Clear();
+        elems_weaponBgGFX_.Clear();
+        elems_weaponAmmoBar_.Clear();
+        for(int i = 0; i < nElems_weaponGFX; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(2*fac, 1*fac, 1.0f);
+            elems_weaponGFX_.actors.insertLast(temp);
+
+            kActor @tempBg = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            tempBg.Scale().Set(2*fac, 1*fac, 1.0f);
+            elems_weaponBgGFX_.actors.insertLast(tempBg);
+
+            kActor @tempAm = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            tempAm.Scale().Set(2*fac, 1*fac, 1.0f);
+            elems_weaponAmmoBar_.actors.insertLast(tempAm);
+        }
+
+        // 5 Stacked ammo slots (5 additional bg images)
+        elems_weaponBgStackGFX_.Clear();
+        for(int i = 0; i < nElems_weaponsStacked; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(2*fac, 1*fac, 1.0f);
+            elems_weaponBgStackGFX_.actors.insertLast(temp);
+        }
+
+        // 3 Weapons with alt ammo (2 additional ammo bars, since 2 of them are stacked)
+        elems_weaponAltAmmoBar_.Clear();
+        for(int i = 0; i < nElems_weaponAltAmmo; i++)
+        {
+            kActor @tempAm = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            tempAm.Scale().Set(2*fac, 1*fac, 1.0f);
+            elems_weaponAltAmmoBar_.actors.insertLast(tempAm);
+        }
+
+    }
+
+
+    // Control
+    // =======
+
+    void UpdateHudData(UT_Hud_Data data)
+    {
+        hud_data_ = data;
+    }
+
+    void StartAnimation_ArmorHit(int dmgLvl)
+    {
+        if(!(animationTimers_.length() > UTA_HUD_ANIM_DMG_ARMOR)) return;
+        texOff_hit_damage_level[1] = dmgLvl;
+        animationTimers_[UTA_HUD_ANIM_DMG_ARMOR].time = 0;
+        animationTimers_[UTA_HUD_ANIM_DMG_ARMOR].duration = 12; // 200ms
+        animationTimers_[UTA_HUD_ANIM_DMG_ARMOR].isEnabled = true;
+    }
+
+    void StartAnimation_Hit(int dmgLvl)
+    {
+        if(!(animationTimers_.length() > UTA_HUD_ANIM_DMG)) return;
+        texOff_hit_damage_level[0] = dmgLvl;
+        animationTimers_[UTA_HUD_ANIM_DMG].time = 0;
+        animationTimers_[UTA_HUD_ANIM_DMG].duration = 12;    // 200ms
+        animationTimers_[UTA_HUD_ANIM_DMG].isEnabled = true;
+    }
+
+
+    // Destruction
+    // ===========
+
+    void Invalidate(bool force = false)
+    {
+        if(force || test !is null)
+        {
+            @test = null;
+            @test2 = null;
+            @kstreakBar_ = null;
+
+            animationTimers_.resize(0);
+
+            elems_fullscreenFX_.Clear();
+            elems_weaponGFX_.Clear();
+            elems_weaponBgGFX_.Clear();
+            elems_weaponBgStackGFX_.Clear();
+            elems_weaponAmmoBar_.Clear();
+            elems_weaponAltAmmoBar_.Clear();
+            elems_healthDisp_.Clear();
+            elems_armorDisp_.Clear();
+
+            elem_num_health_.Invalidate();
+            elem_num_armor_.Invalidate();
+            elem_num_ammo_.Invalidate();
+        }
+    }
+
+
+    // Processing
+    // ==========
+
+    void Tick()
+    {
+        if(test is null)
+        {
+            isInitialized_ = false;
+        }
+
+        if(!isInitialized_)
+        {
+            Log(strCOMP, "Initializing ...");
+            Init();
+        }
+
+        if(test is null)
+        {
+            Warn(strCOMP, "test is null but should not be null!");
+            return;
+        }
+
+        
+
+        // If Turok is climbing, rotate the hud uwards
+        /*if( (Player.Actor().PlayerFlags() & PF_CLIMBTHRUST) > 0 )   // flag is buggy -_-
+        {
+            climbRot_ = kQuat(Math::Deg2Rad(-70), ex);
+        }
+        else
+        {
+            climbRot_ = kQuat(0, ex);
+        }*/
+
+        // Update basePos_ and baseRot_ for HUD elements
+        HMap_.PreComputeHudPosParams();
+
+        // Test
+        test.SetPosition(HMap_.HudPositionToWorldPosition(kVec3(-17, 15, -2)));
+        test.Rotation() = Player.Actor().Rotation() * generic_plane_rot;
+        
+        float z = 10.0f;
+        HMap_.PositionHudElement(test2, z, 0, 900, 200, 200, generic_plane_rot);
+        test2.RenderModel().SetTexture(0, 28);
+
+        kstreakBar_.SetPosition(HMap_.HudPositionToWorldPosition(kVec3(0, 15, 4)));
+        kstreakBar_.Rotation() = Player.Actor().Rotation() * generic_plane_rot;
+
+        // ...
+        if(hud_data_.killSpree_remainder > 0)
+        {
+            test.RenderModel().SetTexture(0, hud_data_.killSpree_remainder);
+        }
+        else
+        {
+            test.RenderModel().SetTexture(0, 0);
+        }
+
+        //test2.RenderModel().SetTexture(0, hud_data_.killSpree_count);
+
+        if(hud_data_.killStreak_perc > 0.0)
+        {
+            kstreakBar_.Scale().Set(12*fac*hud_data_.killStreak_perc, 0.5*fac, 1.0f);
+            kstreakBar_.RenderModel().SetVisibility(0, true);
+        }
+        else
+        {
+            kstreakBar_.RenderModel().SetVisibility(0, false);
+        }
+
+        if(hud_data_.isBossFight)
+        {
+            float bh = float(hud_data_.bossHealth);
+            float bhMax = float(hud_data_.bossInitialHealth);
+            float barWidth = 500.0f * bh / bhMax;
+            int texOffset = 0;
+            if(bh < 0.25f * bhMax)
+            {
+                texOffset = 3;
+            }
+            else if(bh < 0.5f * bhMax)
+            {
+                texOffset = 2;
+            }
+            else if(bh < 0.75f * bhMax)
+            {
+                texOffset = 1;
+            }
+            HMap_.PositionHudElement(elem_bossBar_, 1.0f, 0, 500, barWidth, 45, generic_plane_rot);
+            elem_bossBar_.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + texOffset);
+            elem_bossBar_.RenderModel().SetVisibility(0, true);
+        }
+        else
+        {
+            elem_bossBar_.RenderModel().SetVisibility(0, false);
+        }
+
+        UpdateAnimationTimers();
+
+        //Update_UI_Healthbar();
+        Update_UI_FullscreenFX();
+        Update_UI_WeaponGFX();
+        Update_UI_Numbers();
+        Update_UI_HealthDisp();
+
+    }
+
+
+    void UpdateAnimationTimers()
+    {
+        int nAnim = animationTimers_.length();   // Always use extra variables or you get frakked
+        for(int i = 0; i < nAnim; i++)
+        {
+            animationTimers_[i].time += 1;
+            if(animationTimers_[i].time < animationTimers_[i].duration)
+            {
+                animationTimers_[i].isEnabled = true;
+            }
+            else
+            {
+                animationTimers_[i].time = animationTimers_[i].duration;
+                animationTimers_[i].isEnabled = false;
+            }
+        }
+    }
+
+    void Update_UI_HealthDisp()
+    {
+        if(elems_healthDisp_.actors.length() != nElems_healthDisp)
+        {
+            Warn(strCOMP, "Unexpected elems_healthDisp_ array size");
+            return;
+        }
+        if(elems_armorDisp_.actors.length() != nElems_armorDisp)
+        {
+            Warn(strCOMP, "Unexpected elems_armorDisp_ array size");
+            return;
+        }
+        
+        kActor @temp = null;
+
+        // General positioning and sizes
+        float pz_bg = 10.5f;
+        float pz_nm = 10.0f;
+        
+        float posX0 = -900.0f;
+        float posY0 = -550.0f; 
+
+        float bgElemH = 170.0f;
+        float NumH = 75.0f;
+
+        // Healthcross image x-pos, size and gap-size
+        float ImH = bgElemH * 0.85f;
+        float ImW = ImH / videoSettings_.ratio_W_H;
+        float ImGap = ImW * 0.1f;
+        float posXIm = posX0 + ImGap + ImW / 2.0f;
+        
+        // Numberdisplay x-pos and width
+        float posXNm = posX0 + ImGap + ImW + ImGap;
+        float NumW = 3.0f * NumH / videoSettings_.ratio_W_H;
+
+        // Background image x-pos and width
+        float bgElemW = ImGap + ImW + ImGap + NumW + ImGap;
+        float posXBg = posX0 + bgElemW / 2.0f;
+
+        // Bars
+        float maxHealth = float(hud_data_.health_max);
+        float maxArmor = float(hud_data_.armor_max);
+        float barMaxW = NumW;
+        float barW = barMaxW;   // to be overridden
+        float barH = NumH / 4.0f;
+        float barPosX0 = posXNm;
+        float barPosY0 = posY0 - bgElemH / 2.0f + barH * 2.0f;
+        float barPosX = barPosX0;   // to be overridden
+
+        // Health display
+        // ==============
+
+        // [0] Background image
+        @temp = elems_healthDisp_.actors[0];
+        HMap_.PositionHudElement(temp, pz_bg, posXBg, posY0, bgElemW, bgElemH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudElements);
+
+        // [1] Healthcross image
+        @temp = elems_healthDisp_.actors[1];
+        HMap_.PositionHudElement(temp, pz_nm, posXIm, posY0, ImW, ImH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudElements + 4);
+
+        // [-] Health number display
+        elem_num_health_.Update(hud_data_.health, -10.0f, pz_nm, 
+                                                posXNm, posY0, 
+                                                NumW, NumH, HMap_);
+
+        // [2] Green health bar (current health)
+        barW = barMaxW * float(Clip(hud_data_.health, 0, hud_data_.health_max)) / maxHealth;
+        barPosX = barPosX0 + barW / 2.0f;
+        @temp = elems_healthDisp_.actors[2];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars);
+
+        // [3] Yellow health bar (0-60 health)
+        barW = barMaxW * 60.0f / maxHealth;
+        barPosX = barPosX0 + barW / 2.0f;
+        @temp = elems_healthDisp_.actors[3];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0 - barH, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 1);
+
+        // [4] Orange health bar (60-heal health)
+        barPosX += barW / 2.0f;
+        barW = barMaxW * (float(hud_data_.health_heal) - 60.0f) / maxHealth;
+        barPosX += barW / 2.0f;
+        @temp = elems_healthDisp_.actors[4];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0 - barH, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 2);
+
+        // [5] Red health bar (heal-max health)
+        barPosX += barW / 2.0f;
+        barW = barMaxW * (float(hud_data_.health_max) - float(hud_data_.health_heal)) / maxHealth;
+        barPosX += barW / 2.0f;
+        @temp = elems_healthDisp_.actors[5];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0 - barH, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 3);
+
+
+
+        // Armor display
+        // =============
+
+        // Shift stuff upwards
+        posY0 += bgElemH * 1.1f;
+        barPosY0 = posY0 - bgElemH / 2.0f + barH * 2.0f;
+
+        // [0] Background image
+        @temp = elems_armorDisp_.actors[0];
+        HMap_.PositionHudElement(temp, pz_bg, posXBg, posY0, bgElemW, bgElemH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudElements);
+
+        // [1] Armorshield image
+        @temp = elems_armorDisp_.actors[1];
+        HMap_.PositionHudElement(temp, pz_nm, posXIm, posY0, ImW, ImH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudElements + 5);
+
+        // [-] Armor number display
+        elem_num_armor_.Update(hud_data_.armor, -10.0f, pz_nm, 
+                                                posXNm, posY0, 
+                                                NumW, NumH, HMap_);
+
+        // [2] Yellow armor bar (current armor)
+        barW = barMaxW * float(Clip(hud_data_.armor, 0, hud_data_.armor_max)) / maxArmor;
+        barPosX = barPosX0 + barW / 2.0f;
+        @temp = elems_armorDisp_.actors[2];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 1);
+
+        // [3] Orange health bar (0-heal armor)
+        barW = barMaxW * float(hud_data_.armor_heal) / maxArmor;
+        barPosX = barPosX0 + barW / 2.0f;
+        @temp = elems_armorDisp_.actors[3];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0 - barH, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 2);
+
+        // [4] Red armor bar (heal-max armor)
+        barPosX += barW / 2.0f;
+        barW = barMaxW * (float(hud_data_.armor_max) - float(hud_data_.armor_heal)) / maxArmor;
+        barPosX += barW / 2.0f;
+        @temp = elems_armorDisp_.actors[4];
+        HMap_.PositionHudElement(temp, pz_nm, 
+                                barPosX, barPosY0 - barH, 
+                                barW, barH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 3);
+
+    }
+
+    void Update_UI_Numbers()
+    {
+
+        elem_num_armor_.Update(hud_data_.armor, -10.0f, 1.0f, 
+                                                -550.0f, -500.0f, 
+                                                120.0f, 40.0f, HMap_);
+
+        int ammo = Player.GetAmmo(Player.CurrentWeapon());
+        int altAmmo = Player.GetAltAmmo(Player.CurrentWeapon());
+        if(altAmmo > 0)
+        {
+            ammo = altAmmo;
+        }
+        elem_num_ammo_.Update(ammo, -10.0f, 1.0f, 
+                                    -550.0f, -600.0f, 
+                                    120.0f, 40.0f, HMap_);
+
+    }
+
+
+    void Update_UI_WeaponGFX()
+    {
+        if(elems_weaponGFX_.actors.length() != nElems_weaponGFX)
+        {
+            Warn(strCOMP, "Unexpected elems_weaponGFX_ array size");
+            return;
+        }
+        
+        if(elems_weaponBgGFX_.actors.length() != nElems_weaponGFX)
+        {
+            Warn(strCOMP, "Unexpected elems_weaponBgGFX_ array size");
+            return;
+        }
+
+        if(elems_weaponBgStackGFX_.actors.length() != nElems_weaponsStacked)
+        {
+            Warn(strCOMP, "Unexpected elems_weaponBgStackGFX_ array size");
+            return;
+        }
+
+        if(elems_weaponAmmoBar_.actors.length() != nElems_weaponAmmo)
+        {
+            Warn(strCOMP, "Unexpected elems_weaponAmmoBar_ array size");
+            return;
+        }
+
+        if(elems_weaponAltAmmoBar_.actors.length() != nElems_weaponAltAmmo)
+        {
+            Warn(strCOMP, "Unexpected elems_weaponAltAmmoBar_ array size");
+            return;
+        }
+
+        kActor @temp = null;
+        kActor @tempBg = null;
+        kActor @tempSt = null;
+        kActor @tempBar = null;
+        kActor @tempAltBar = null;
+
+        float pz_wp = 1.125f;
+        float pz_am = 1.0f;
+        float pz_st = 1.25f;
+        float pz_bg = 1.5f;
+
+        float wpHudElemWidth = 150.0f;
+        float wpHudElemHeight = wpHudElemWidth * 0.9f;
+        float wpHudBgToWpScale = 0.75f;
+        float wpHudStackYOff = wpHudElemHeight * 0.98f;
+        float yOffDoubleSlot = 4.0f * (wpHudElemHeight - wpHudStackYOff);
+
+        float posX0 = -900.0f;
+        float posY0 = -750.0f;        
+
+        // Iterate over all slots
+        int curWeaponIdx = Player.CurrentWeapon();
+        int curSlotIdx = weaponSlotMapping[curWeaponIdx];
+        for(int iSlot = 0; iSlot < nElems_weaponGFX; iSlot++)
+        {
+            float pz_off = 10.0f;
+            if(iSlot > 5)
+            {
+                pz_off = 0.0f;
+            }
+
+            // Weapon ownage and slot type
+            bool ownsSlotWeapon = Player.HasWeapon(slotWeaponMapping1[iSlot]);
+            bool ownsAltSlotWeapon = Player.HasWeapon(slotWeaponMapping2[iSlot]);
+            bool isDoubleSlot = (slotStackID[iSlot] > 0);
+
+            // Detect selected slot and corresponding weapon (texture)
+            // ---------------------------------------------
+            int idxWpTex = 0;   // Weapon texture index to display
+            int idxWp = 0;      // Index of weapon that is displayed
+            bool isCurSlotSelected = false;
+            bool isAltSlotSelected = false;
+
+            if(iSlot == curSlotIdx)
+            {
+                // Current slot has the current weapon -> is selected
+                isCurSlotSelected = true;
+                idxWp = curWeaponIdx;
+                idxWpTex = curWeaponIdx;
+                isAltSlotSelected = (slotWeaponMapping1[iSlot] != curWeaponIdx);
+            }
+            else
+            {
+                // Current slot is not selected
+                if(ownsSlotWeapon)
+                {
+                    idxWp = slotWeaponMapping1[iSlot];
+                    idxWpTex = idxWp;
+                }
+                else if(ownsAltSlotWeapon)
+                {
+                    idxWp = slotWeaponMapping2[iSlot];
+                    idxWpTex = idxWp;
+                }
+                else
+                {
+                    idxWp = slotWeaponMapping1[iSlot];
+                    idxWpTex = idxWp + tex_offset_gfx_WeaponBlack;
+                }
+            }
+
+            /*if(idxWp == 0)
+            {
+                idxWp = 1;
+            }*/
+            
+
+            // Position weapon background element
+            // ----------------------------------
+            float posBgX = posX0 + wpHudElemWidth * (float(iSlot) + 0.5f);
+            float posBgY = posY0;
+
+            int tex_idx = tex_offset_gfx_HudElements;   // Default background
+            if(isCurSlotSelected)
+            {
+                tex_idx = tex_offset_gfx_HudElements + 3;   // Selected background
+            }
+            if(isAltSlotSelected)
+            {
+                posBgY += yOffDoubleSlot;   // Shift upwards
+            }
+            @tempBg = elems_weaponBgGFX_.actors[iSlot];
+            HMap_.PositionHudElement(tempBg, pz_bg + pz_off, posBgX, posBgY, wpHudElemWidth, wpHudElemHeight, generic_plane_rot);
+            tempBg.RenderModel().SetTexture(0, tex_idx);
+            
+
+            // Position weapon background topper/bottomer element
+            // --------------------------------------------------
+            if(isDoubleSlot)
+            {
+                bool showTopper = false;
+                bool showBottomer = false;
+
+                if(isAltSlotSelected)
+                {
+                    if(ownsSlotWeapon)
+                    {
+                        showBottomer = true;
+                    }
+                }
+                else if(ownsSlotWeapon && ownsAltSlotWeapon)
+                {
+                    showTopper = true;
+                }
+
+                int idx = slotStackID[iSlot] - 1;
+                @tempSt = elems_weaponBgStackGFX_.actors[idx];
+                if(showBottomer || showTopper)
+                {
+                    float posYSt = posBgY;
+                    if(showTopper)
+                    {
+                        posYSt = posBgY + wpHudStackYOff;
+                        tempSt.RenderModel().SetTexture(0, tex_offset_gfx_HudElements + 1);
+                    }
+                    else
+                    {
+                        posYSt = posBgY - wpHudStackYOff;
+                        tempSt.RenderModel().SetTexture(0, tex_offset_gfx_HudElements + 2);
+                    }
+                    HMap_.PositionHudElement(tempSt, pz_st + pz_off, posBgX, posYSt, wpHudElemWidth, wpHudElemHeight, generic_plane_rot);
+                    tempSt.RenderModel().SetVisibility(0, true);
+                }
+                else
+                {
+                    tempSt.RenderModel().SetVisibility(0, false);
+                }
+            }
+
+
+            // Position weapon element
+            // -----------------------
+            float posX = posBgX;
+            float posY = posBgY;
+            @temp = elems_weaponGFX_.actors[iSlot];
+            HMap_.PositionHudElement(temp, pz_wp + pz_off, posX, posY, wpHudElemWidth * wpHudBgToWpScale, wpHudElemHeight * wpHudBgToWpScale, generic_plane_rot);
+            temp.RenderModel().SetTexture(0, idxWpTex);
+
+
+            // Position ammo bar element
+            // -------------------------
+            int ammo = Player.GetAmmo(idxWp);
+            int altAmmo = Player.GetAltAmmo(idxWp);
+
+            @tempBar = elems_weaponAmmoBar_.actors[iSlot];
+
+            bool isAltAmmoBarSlot = false;
+            if(slotAltAmmoID[iSlot] > 0)
+            {
+                @tempAltBar = elems_weaponAltAmmoBar_.actors[slotAltAmmoID[iSlot]-1];
+                isAltAmmoBarSlot = true;
+            }
+
+            if(isAltAmmoBarSlot)
+            {
+                if(altAmmo > 0)
+                {
+                    if(altAmmo > g_maxAltAmmo[idxWp])
+                    {
+                        g_maxAltAmmo[idxWp] = altAmmo;
+                        Log("Max alt ammo for weapon " + idxWp + " has been increased to " + altAmmo);
+                    }
+                    int altAmmoBarMax = g_maxAltAmmo[idxWp];
+                    tempAltBar.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 3);   // red
+                    tempAltBar.RenderModel().SetVisibility(0, true);
+
+                    float pcBar = float(Clip(altAmmo, 0, altAmmoBarMax)) / float(altAmmoBarMax);
+                    float barWidth = wpHudElemWidth * 0.90f * pcBar;
+                    float barHeight =  wpHudElemHeight * 0.15f;
+                    float posBX = posBgX - wpHudElemWidth / 2.0f + wpHudElemWidth * 0.05f + barWidth / 2.0f;
+                    float posBY = posBgY - wpHudElemHeight * 0.45f;
+                    if(ammo > 0) 
+                    {
+                        barHeight /= 2.0f;
+                        posBY += barHeight / 2.0f;
+                    }
+                    HMap_.PositionHudElement(tempAltBar, pz_am + pz_off, posBX, posBY, barWidth, barHeight, generic_plane_rot);
+                }
+                else 
+                {
+                    tempAltBar.RenderModel().SetVisibility(0, false);
+                }
+            }
+
+            if(ammo > 0)
+            {
+                if(ammo > g_maxAmmo[idxWp])
+                {
+                    g_maxAmmo[idxWp] = ammo;
+                    Log("Max ammo for weapon " + idxWp + " has been increased to " + ammo);
+                }
+                int ammoBarMax = g_maxAmmo[idxWp];
+                tempBar.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 1);   // yellow
+                tempBar.RenderModel().SetVisibility(0, true);
+
+                float pcBar = float(Clip(ammo, 0, ammoBarMax)) / float(ammoBarMax);
+                float barWidth = wpHudElemWidth * 0.90f * pcBar;
+                float barHeight =  wpHudElemHeight * 0.15f;
+                float posBX = posBgX - wpHudElemWidth / 2.0f + wpHudElemWidth * 0.05f + barWidth / 2.0f;
+                float posBY = posBgY - wpHudElemHeight * 0.45f;
+                if(altAmmo > 0) 
+                {
+                    barHeight /= 2.0f;
+                    posBY -= barHeight / 2.0f;
+                }
+                HMap_.PositionHudElement(tempBar, pz_am + pz_off, posBX, posBY, barWidth, barHeight, generic_plane_rot);
+            }
+            else
+            {
+                tempBar.RenderModel().SetVisibility(0, false);
+            }
+            
+
+
+        }
+
+        
+    }
+
+
+    void Update_UI_FullscreenFX()
+    {
+        if(elems_fullscreenFX_.actors.length() != nElems_fullscreenFX)
+        {
+            Warn(strCOMP, "Unexpected elems_fullscreenFX array size");
+            return;
+        }
+
+        kActor @temp = null;
+
+        float pz = 1.0f;
+        float hudScale = 2.0f * facHudCoord * 1.25f;   // Oversacle by 25%
+
+        // Damage
+        @temp = elems_fullscreenFX_.actors[UTA_HUD_ANIM_DMG];
+        if(animationTimers_[UTA_HUD_ANIM_DMG].isEnabled)
+        {
+            HMap_.PositionHudElement(temp, pz, 0, 0, hudScale, hudScale, generic_plane_rot);
+            int texOff = Clip(texOff_hit_damage_level[0], 0, 2);
+            temp.RenderModel().SetTexture(0, UTA_HUD_TEX_DAMAGE_EFFECT_1 + texOff);
+            temp.RenderModel().SetVisibility(0, true);
+        }
+        else
+        {
+            temp.RenderModel().SetVisibility(0, false);
+        }
+
+        // Armor Damage
+        @temp = elems_fullscreenFX_.actors[UTA_HUD_ANIM_DMG_ARMOR];
+        if(animationTimers_[UTA_HUD_ANIM_DMG_ARMOR].isEnabled)
+        {
+            HMap_.PositionHudElement(temp, pz, 0, 0, hudScale, hudScale, generic_plane_rot);
+            int texOff = Clip(texOff_hit_damage_level[1], 0, 1);
+            temp.RenderModel().SetTexture(0, UTA_HUD_TEX_ARMOR_EFFECT_1 + texOff);
+            temp.RenderModel().SetVisibility(0, true);
+        }
+        else
+        {
+            temp.RenderModel().SetVisibility(0, false);
+        }
+
+    }
+    
+
+}
+
+}   // NS: UTAddOn
