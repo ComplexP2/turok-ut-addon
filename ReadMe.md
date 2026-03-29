@@ -47,6 +47,8 @@ Not a fan of reading long texts? Then just do the following:
 - Go to **Options** -> **Game Play** -> **Head Bobbing Options** and set ALL options to **Off**  
 - Start a new game and have fun  
 
+Or watch [this video](https://www.youtube.com/watch?v=uCNFpQMSxpU)
+
 ## Demo
 
 [Level 5 and 6 Demo (YouTube)](https://www.youtube.com/watch?v=V8UssdtAS7o)
