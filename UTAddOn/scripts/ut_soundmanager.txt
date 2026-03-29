@@ -29,11 +29,22 @@ enum UT_Sounds
     UT_SND_EV_LAST_SECOND_SAVE,
     UT_SND_EV_DEAD,
     UT_SND_EV_FIRST_BLOOD,
+
+    // Ownage streak
+    UT_SND_EV_IMPRESSIVE,
+    UT_SND_EV_EXCELLENT,
+    UT_SND_EV_TERMINATION,
+    UT_SND_EV_BLOODBATH,
+    UT_SND_EV_ERADICATION,
+    UT_SND_EV_MASSACRE,
+    UT_SND_EV_EXTERMINATION,
     UT_SND_EV_UNREAL,
 
     // Player
     UT_SND_EV_DENIED,
     UT_SND_EV_BOOSTER,
+    UT_SND_EV_AMMO,
+    UT_SND_EV_SHIELD_PACK,
     UT_SND_EV_ARMOR_HIT,
     UT_SND_T_1,
     UT_SND_T_2,
@@ -55,6 +66,7 @@ enum UT_SoundCategories
     UT_SND_CAT_KILLSTREAK,
     UT_SND_CAT_KILLSPREE,
     UT_SND_CAT_EVENT,
+    UT_SND_CAT_OWNAGESTREAK,
     UT_SND_CAT_PLAYER,
     UT_SND_CAT_SPECIAL,
     UT_SND_CAT_ABOVE_SPECIAL
@@ -127,10 +139,12 @@ class UT_SoundManager
 
     UT_SoundDict dict_snd;
     int timer_killStreak = 0;
+    int timer_ownageStreak = 0;
     int timer_event = 0;
     int timer_special = 0;
     int timer_killSpree = 0;
     UT_Queue_int queue_KillSpree;
+    UT_Queue_int queue_OwnageStreak;
     UT_Queue_int queue_Event;
 
     UT_SoundManager()
@@ -162,7 +176,16 @@ class UT_SoundManager
         RegisterSound(UT_SND_KP_UNSTOPPABLE, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_Unstoppable.ksnd", 1.94f);
         RegisterSound(UT_SND_KP_GODLIKE, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_GodLike.ksnd", 1.74f);
         RegisterSound(UT_SND_KP_WHICKED_SICK, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/KP_WhickedSick.ksnd", 2.52f);
-        RegisterSound(UT_SND_EV_UNREAL, UT_SND_CAT_KILLSPREE, "UTAddOn/sounds/EV_Unreal.ksnd", 2.27f);
+
+        // Ownage streak
+        RegisterSound(UT_SND_EV_IMPRESSIVE,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Impressive.ksnd",2.82f);
+        RegisterSound(UT_SND_EV_EXCELLENT,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Excellent.ksnd",1.86f);
+        RegisterSound(UT_SND_EV_TERMINATION,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Termination.ksnd",2.27f);
+        RegisterSound(UT_SND_EV_BLOODBATH,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Bloodbath.ksnd",2.43f);
+        RegisterSound(UT_SND_EV_ERADICATION,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Eradication.ksnd",2.67f);
+        RegisterSound(UT_SND_EV_MASSACRE,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Massacre.ksnd",2.51f);
+        RegisterSound(UT_SND_EV_EXTERMINATION,UT_SND_CAT_OWNAGESTREAK,"UTAddOn/sounds/EV_Extermination.ksnd",2.72f);
+        RegisterSound(UT_SND_EV_UNREAL, UT_SND_CAT_OWNAGESTREAK, "UTAddOn/sounds/EV_Unreal.ksnd", 2.27f);
         
         // Event
         // Is delayed until killstreak sounds are finished
@@ -171,11 +194,13 @@ class UT_SoundManager
         // Special
         // Supresses all sounds until playback has finished
         RegisterSound(UT_SND_EV_LAST_SECOND_SAVE, UT_SND_CAT_SPECIAL, "UTAddOn/sounds/EV_Last_Second_Save.ksnd", 2.0f);//2.17f);
-        RegisterSound(UT_SND_EV_FIRST_BLOOD, UT_SND_CAT_SPECIAL, "UTAddOn/sounds/EV_First_Blood.ksnd", 2.0f);//2.29f);
+        RegisterSound(UT_SND_EV_FIRST_BLOOD, UT_SND_CAT_SPECIAL, "UTAddOn/sounds/EV_First_Blood.ksnd", 1.5f);//2.29f);
 
         // Above Special
         // Is played immediately, ignoring special sounds
         RegisterSound(UT_SND_EV_BOOSTER, UT_SND_CAT_ABOVE_SPECIAL, "UTAddOn/sounds/EV_Booster.ksnd", 1.65f);        
+        RegisterSound(UT_SND_EV_SHIELD_PACK, UT_SND_CAT_ABOVE_SPECIAL, "UTAddOn/sounds/EV_ShieldPack.ksnd", 0.85f);
+        RegisterSound(UT_SND_EV_AMMO,UT_SND_CAT_ABOVE_SPECIAL,"UTAddOn/sounds/EV_AmmoPickup.ksnd",0.63f);
 
         // Player
         // Is played immediately (parallel to other sounds)
@@ -209,12 +234,16 @@ class UT_SoundManager
         dict_snd.Add(soundId, data);
     }
 
-    void Tick()
+    void Tick(bool isOnOwnageStreak)
     {
         // Update timers
         if(timer_killStreak > 0)
         {
             timer_killStreak--;
+        }
+        if(timer_ownageStreak > 0)
+        {
+            timer_ownageStreak--;
         }
         if(timer_event > 0)
         {
@@ -230,7 +259,7 @@ class UT_SoundManager
         }
 
         // Play sounds stored in queues
-        if(timer_killStreak == 0)
+        if(timer_ownageStreak == 0 && timer_killStreak == 0)    // > 0 means a sound is playing
         {
             // Play only if killstreak sound has finished
 
@@ -252,25 +281,55 @@ class UT_SoundManager
             }
             else if(timer_event == 0)
             {
-                // Play KillSpree sounds only if event sounds have finished
+
+                // Play OwnageStreak sounds only if event sounds have finished and
+                // if no killing streak sound is currently playing
                 // (and wait for other killspree sounds as well)
 
-                if(queue_KillSpree.Size() > 0 && timer_killSpree == 0)
+                if(queue_OwnageStreak.Size() > 0 && timer_killSpree == 0 && 
+                   timer_ownageStreak == 0)
+                {
+                    int soundId;
+                    if(queue_OwnageStreak.Pop(soundId))
+                    {
+                        UT_SoundData data = dict_snd.Get(soundId);
+                        if(data.soundId < 0)
+                        {
+                            Warn(strCOMP, "Unexpected: Key not found: " + soundId);
+                            return;
+                        }
+                        Log("PlaySound: " + data.filename);
+                        PlaySound_OwnageStreak(data.filename, data.duration_ticks);
+                    }
+                }
+
+
+                // Start playing a KillSpree sound only, if the ownage streak queue
+                // is empty and no ownage streak sound is currently playing and player
+                // is not on an ownage streak right now
+                // -> prevents KillSpree sounds playing prior to OwnageStreak sounds
+                // (and wait for other killspree sounds as well)
+
+                if(!isOnOwnageStreak &&
+                   queue_KillSpree.Size() > 0 && timer_killSpree == 0 && 
+                   queue_OwnageStreak.Size() == 0 && timer_ownageStreak == 0)
                 {
                     // Play killspree sounds of queue
 
-                    int soundId = -1;
-                    queue_KillSpree.Pop(soundId);
-
-                    UT_SoundData data = dict_snd.Get(soundId);
-                    if(data.soundId < 0)
+                    int soundId;
+                    if(queue_KillSpree.Pop(soundId))
                     {
-                        Warn(strCOMP, "Unexpected: Key not found: " + soundId);
-                        return;
+                        UT_SoundData data = dict_snd.Get(soundId);
+                        if(data.soundId < 0)
+                        {
+                            Warn(strCOMP, "Unexpected: Key not found: " + soundId);
+                            return;
+                        }
+                        Log("PlaySound: " + data.filename);
+                        PlaySound_KillSpree(data.filename, data.duration_ticks);
                     }
-
-                    PlaySound_KillSpree(data.filename, data.duration_ticks);
                 }
+
             }
         }
     }
@@ -307,14 +366,11 @@ class UT_SoundManager
 
             case UT_SND_CAT_KILLSPREE:
                 // Put sound into queue for later playback
-                if(soundId == UT_SND_EV_UNREAL)
-                {
-                    queue_KillSpree.Push(soundId, true, true);
-                }
-                else
-                {
-                    queue_KillSpree.Push(soundId, true, false);
-                }
+                queue_KillSpree.Push(soundId, true);
+                break;
+
+            case UT_SND_CAT_OWNAGESTREAK:
+                queue_OwnageStreak.Push(soundId, true);
                 break;
 
             case UT_SND_CAT_EVENT:
@@ -334,6 +390,37 @@ class UT_SoundManager
 
     }
 
+    void ReduceSpreeQueueToHighest() {
+        
+        array<int> data = queue_KillSpree.GetArray();
+        int nData = data.length();
+
+        if(nData == 0) 
+        {
+            return;
+        }
+        
+        // Find max value
+        int maxValue = -1;
+        for(int i = 0; i < nData; i++)
+        {
+            if(data[i] > maxValue) {
+                maxValue = data[i];
+            }
+        }
+
+        if(maxValue < 0)
+        {
+            return;
+        }
+
+        // Reduce queue to one maxValue entry
+        array<int> newData;
+        newData.insertAt(0, maxValue);
+
+        queue_KillSpree.SetArray(newData);
+    }
+
     void PlaySound(kStr filename)
     {
         Game.PlaySound(filename);
@@ -349,6 +436,12 @@ class UT_SoundManager
     {
         Game.PlaySound(filename);
         timer_killSpree = nTicks;
+    }
+
+    void PlaySound_OwnageStreak(kStr filename, int nTicks)
+    {
+        Game.PlaySound(filename);
+        timer_ownageStreak = nTicks;
     }
 
     void PlaySound_Event(kStr filename, int nTicks)

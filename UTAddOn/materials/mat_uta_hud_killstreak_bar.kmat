@@ -6,7 +6,7 @@ material surf_12_1234C {
     depthtest
     color_diffuse "1.000000 1.000000 1.000000 1.000000"
 
-    sampler "diffuse" 0 "UTAddOn/textures/tex_killstreak_bar.png" {
+    sampler "diffuse" 0 "UTAddOn/textures/hud/tex_killstreak_bar.png" {
         filter      linear
         wrap        repeat
     }

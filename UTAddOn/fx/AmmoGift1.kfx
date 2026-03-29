@@ -1,0 +1,31 @@
+fx[1] =
+{
+    {
+        bTextureWrapMirrorWidth = 0
+        bTextureWrapMirrorHeight = 0
+        bDepthBuffer = 0
+        bDrawOnBottom = 1
+        bScaleLerp = 1
+        bNoHitSource = 1
+        translationRandomGlobal = 0.000000
+        translation = { 0.000000 0.000000 0.000000 }
+        scale = 8.5
+        scaleDest = 0.01
+        rotationOffsetRandom = 0
+        shader = "progs/worldfx"
+        sprite = "UTAddOn/sprites/fx_AmmoGift1"
+        instances = 1
+        lifeTime = 40
+        animSpeed = 30
+        whiteColor = { 0.700000 0.700000 0.700000 }
+        blackColor = { 0.200000 0.200000 0.200000 }
+        hueRandom = 0.000000
+        saturationRandom = 0.000000
+        brightnessRandom = 0.000000
+        fadeOutTime = 30
+        drawType = 0
+        animType = 0
+        priority = 99
+    }
+
+ }

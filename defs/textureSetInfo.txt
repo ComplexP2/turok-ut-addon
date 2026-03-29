@@ -1,38 +1,13 @@
-"UTAddOn/textures/tex_test.png"
+
+"UTAddOn/textures/hud/tex_ArmorEffect1.png"
 {
     animated 0
     speed 0
 
-    texture_1 "UTAddOn/textures/tex_test2.png"
-    texture_2 "UTAddOn/textures/tex_test3.png"
-    texture_3 "UTAddOn/textures/tex_test4.png"
-}
-
-"UTAddOn/textures/tex0610_00.png"
-{
-    animated 0
-    speed 0
-
-    texture_1 "UTAddOn/textures/tex0610_04.png"
-    texture_2 "UTAddOn/textures/tex0610_03.png"
-    texture_3 "UTAddOn/textures/tex0610_02.png"
-    texture_4 "UTAddOn/textures/tex0610_01.png"
-}
-
-"UTAddOn/textures/tex_black.png"
-{
-    animated 0
-    speed 0
-
-    texture_1 "UTAddOn/textures/tex_green.png"
-    texture_2 "UTAddOn/textures/tex_yellow.png"
-    texture_3 "UTAddOn/textures/tex_red.png"
-    texture_4 "UTAddOn/textures/tex_dark_red.png"
-    texture_5 "UTAddOn/textures/hud/tex_ArmorEffect1.png"
-    texture_6 "UTAddOn/textures/hud/tex_ArmorEffect2.png"
-    texture_7 "UTAddOn/textures/hud/tex_DamageEffect1.png"
-    texture_8 "UTAddOn/textures/hud/tex_DamageEffect2.png"
-    texture_9 "UTAddOn/textures/hud/tex_DamageEffect3.png"
+    texture_1 "UTAddOn/textures/hud/tex_ArmorEffect2.png"
+    texture_2 "UTAddOn/textures/hud/tex_DamageEffect1.png"
+    texture_3 "UTAddOn/textures/hud/tex_DamageEffect2.png"
+    texture_4 "UTAddOn/textures/hud/tex_DamageEffect3.png"
 }
 
 "UTAddOn/textures/hud/h_w_knife.png"
@@ -91,6 +66,31 @@
     texture_45 "UTAddOn/textures/hud/num_7.png"
     texture_46 "UTAddOn/textures/hud/num_8.png"
     texture_47 "UTAddOn/textures/hud/num_9.png"
+    
+    texture_48 "UTAddOn/textures/hud/h_a_arrow1.png"
+    texture_49 "UTAddOn/textures/hud/h_a_arrow2.png"
+    texture_50 "UTAddOn/textures/hud/h_a_clip.png"
+    texture_51 "UTAddOn/textures/hud/h_a_shells1.png"
+    texture_52 "UTAddOn/textures/hud/h_a_shells2.png"
+    texture_53 "UTAddOn/textures/hud/h_a_mags.png"
+    texture_54 "UTAddOn/textures/hud/h_a_cell.png"
+    texture_55 "UTAddOn/textures/hud/h_a_grenades.png"
+    texture_56 "UTAddOn/textures/hud/h_a_missiles.png"
+    texture_57 "UTAddOn/textures/hud/h_a_power.png"
+    texture_58 "UTAddOn/textures/hud/h_a_scepter.png"
+    
+    texture_59 "UTAddOn/textures/hud/spree_0_0.png"
+    texture_60 "UTAddOn/textures/hud/spree_0_1.png"
+    texture_61 "UTAddOn/textures/hud/spree_0_2.png"
+    texture_62 "UTAddOn/textures/hud/spree_0_3.png"
+    texture_63 "UTAddOn/textures/hud/spree_0_4.png"
+    texture_64 "UTAddOn/textures/hud/spree_1_0.png"
+    texture_65 "UTAddOn/textures/hud/spree_1_1.png"
+    texture_66 "UTAddOn/textures/hud/spree_1_2.png"
+    texture_67 "UTAddOn/textures/hud/spree_1_3.png"
+    texture_68 "UTAddOn/textures/hud/spree_1_4.png"
+    texture_69 "UTAddOn/textures/hud/spree_1_5.png"
+    texture_70 "UTAddOn/textures/hud/spree_1_6.png"
 }
 
 

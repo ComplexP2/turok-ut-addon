@@ -8,6 +8,10 @@ namespace UTAddOn
 namespace Turok		// Namespace is only found if UTAddOn:: prefix is given, even if used inside a UTAddOn namespace
 {
 
+array<int> g_maxAmmo    = {0, 30, 200, 40, 40, 200, 100, 500, 30, 100, 12, 100,  3,  3};
+array<int> g_maxAltAmmo = {0, 15,   0, 20, 20,   0,   0,   0,  0,   0,  0,   0,  0,  0};
+
+
 enum UT_Level_IDs
 {
 	UTA_LVL_ID_NONE = 0,
@@ -77,7 +81,7 @@ int GetLevelId()
     switch(mapId)
     {
 		// Not an active game (menu, sequences)
-		case 1:		// Escape from Campaigner apartment
+		case 1:		// Escape from Campaigner base
         case 42:	// Menu
 		case 43:
 		case 44:
@@ -271,6 +275,7 @@ UT_TemporaryActor SpawnItemAtPosition(kVec3 pos, kStr strItem, float lifeTime_s,
 	UT_TemporaryActor tempActor;
 	@tempActor.actorRef = item;
 	tempActor.lifeTime_s = lifeTime_s;
+	tempActor.despawnFxId = 1;
 
 	return tempActor;
 }
@@ -279,11 +284,11 @@ UT_TemporaryActor SpawnItemAtPosition(kVec3 pos, kStr strItem, float lifeTime_s,
 // ==============
 // SpawnLifeForce
 // ==============
-// Spawns a lifeforce object into turok (so it's collected immediately)
-void SpawnLifeForce()
+// Spawns a lifeforce object into Turok (so it's collected immediately)
+UT_TemporaryActor SpawnLifeForce()
 {
-	/* DON'T! Because we cannot detect if lives are full and then we would spam objects!
-		Workaround would be quite a bunch of cumbersome work ...
+	Log("Spawning: UTA_LifeForce_2_Silent");
+	
 	kVec3 pos = Player.Actor().Origin();
 	int secIdx = Player.Actor().SectorIndex();
 	kActor @item = ActorFactory.Spawn("UTA_LifeForce_2_Silent",
@@ -291,8 +296,82 @@ void SpawnLifeForce()
 										pos.y,
 										pos.z + Player.Actor().ViewHeight()/2.0f,
 										0, secIdx);
-	*/
+
+	item.Scale() = kVec3(0.01f, 0.01f, 0.01f);
+
+	// Actor with limited lifetime
+	UT_TemporaryActor tempActor;
+	@tempActor.actorRef = item;
+	tempActor.lifeTime_s = 4.0f / 60.0f;	// 4 Ticks
+	tempActor.despawnFxId = 0;
+
+	return tempActor;
 }
+
+
+class WeaponInfo
+{
+	int weaponIndex = -1;
+	bool ownsWeapon = false;
+	bool ownsAmmo = false;
+	bool ownsAltAmmo = false;
+	bool hasAltAmmo = false;	// indicates if the weapon has an alt ammo slot
+	int ammo = 0;
+	int altAmmo = 0;
+	int maxAmmo = 0;
+	int maxAltAmmo = 0;
+	float pcAmmo = 0.0f;		// ratio of current ammo to max ammo
+	float pcAltAmmo = 0.0f;		// ratio of current alt ammo to max alt ammo
+}
+
+
+WeaponInfo GetWeaponInfo(int idxWp)
+{
+	WeaponInfo wpInfo;
+
+	wpInfo.weaponIndex = idxWp;
+
+	wpInfo.ownsWeapon = Player.HasWeapon(idxWp);
+	wpInfo.ammo = Player.GetAmmo(idxWp);
+	wpInfo.altAmmo = Player.GetAltAmmo(idxWp);
+
+	wpInfo.ownsAmmo = (wpInfo.ammo > 0);
+	wpInfo.ownsAltAmmo = (wpInfo.altAmmo > 0);
+
+	wpInfo.maxAmmo = g_maxAmmo[idxWp];
+	wpInfo.maxAltAmmo = g_maxAltAmmo[idxWp];
+
+	if(wpInfo.ammo > 0)
+	{
+		if(wpInfo.ammo > g_maxAmmo[idxWp])
+		{
+			// Unexpected ammo amount (probably because of another mod) 
+			// -> increase max value automatically
+			g_maxAmmo[idxWp] = wpInfo.ammo;
+			wpInfo.maxAmmo = wpInfo.ammo;
+			Log("Max ammo for weapon " + idxWp + " has been increased to " + wpInfo.ammo);
+		}
+		wpInfo.pcAmmo = float(Clip(wpInfo.ammo, 0, wpInfo.maxAmmo)) / float(wpInfo.maxAmmo);
+	}
+	
+	if(wpInfo.altAmmo > 0)
+	{
+		if(wpInfo.altAmmo > g_maxAltAmmo[idxWp])
+		{
+			// Unexpected ammo amount (probably because of another mod) 
+			// -> increase max value automatically
+			g_maxAltAmmo[idxWp] = wpInfo.altAmmo;
+			wpInfo.maxAltAmmo = wpInfo.altAmmo;
+			Log("Max alt ammo for weapon " + idxWp + " has been increased to " + wpInfo.altAmmo);
+		}
+		wpInfo.pcAltAmmo = float(Clip(wpInfo.altAmmo, 0, wpInfo.maxAltAmmo)) / float(wpInfo.maxAltAmmo);
+	}
+
+	wpInfo.hasAltAmmo = (wpInfo.maxAltAmmo > 0);
+
+	return wpInfo;
+}
+
 
 }	// NS: Turok
 }   // NS: UTAddOn

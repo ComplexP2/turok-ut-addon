@@ -1,17 +1,20 @@
 #include "UTAddOn/scripts/ut_helper.txt"
+#include "UTAddOn/scripts/ut_turok_helper.txt"
 
 namespace UTAddOn
 {
 
 // Properties of the generic plane object that is used to display HUD elements
 const float fac = 1.0/(2*439.0);  // Generic quadratic plane size normalization factor
-const kQuat generic_plane_rot = kQuat(Math::pi, ey) * kQuat(-Math::pi/2, ex);
+const kQuat generic_plane_rot = kQuat(Math::pi, ey) * kQuat(-Math::pi/2, ex);   // Base rotation, such that the plane faces to the origin in x-direction
 
 // Texture group offsets
 const int tex_offset_gfx_WeaponBlack = 14;
 const int tex_offset_gfx_HudElements = 28;
 const int tex_offset_gfx_HudBars = 34;
 const int tex_offset_gfx_Numbers = 38;
+const int tex_offset_gfx_Ammo = 48;
+const int tex_offset_gfx_Spree = 59;
 
 // Minimal hud element z-distance
 const float hud_zOff = 0.0f;
@@ -19,22 +22,19 @@ const float hud_zOff = 0.0f;
 
 enum UT_tex_black_variants
 {
-    UTA_HUD_TEX_BLACK = 0,
-    UTA_HUD_TEX_GREEN = 1,
-    UTA_HUD_TEX_YELLOW = 2,
-    UTA_HUD_TEX_RED = 3,
-    UTA_HUD_TEX_DARK_RED = 4,
-    UTA_HUD_TEX_ARMOR_EFFECT_1 = 5,
-    UTA_HUD_TEX_ARMOR_EFFECT_2 = 6,
-    UTA_HUD_TEX_DAMAGE_EFFECT_1 = 7,
-    UTA_HUD_TEX_DAMAGE_EFFECT_2 = 8,
-    UTA_HUD_TEX_DAMAGE_EFFECT_3 = 9
+    UTA_HUD_TEX_ARMOR_EFFECT_1 = 0,
+    UTA_HUD_TEX_ARMOR_EFFECT_2 = 1,
+    UTA_HUD_TEX_DAMAGE_EFFECT_1 = 2,
+    UTA_HUD_TEX_DAMAGE_EFFECT_2 = 3,
+    UTA_HUD_TEX_DAMAGE_EFFECT_3 = 4
 }
 
 enum UT_animation_index
 {
     UTA_HUD_ANIM_DMG = 0,
     UTA_HUD_ANIM_DMG_ARMOR = 1,
+    UTA_HUD_ANIM_SPREE_FULL = 2,
+    UTA_HUD_ANIM_SPREE_CLOSE = 3,
 
     UTA_HUD_ANIM_ARRAYSIZE
 }
@@ -100,6 +100,7 @@ class UT_Hud_VideoSettings
 class UT_Hud_Timer
 {
     bool isEnabled = false;
+    bool doLoop = false;
     int time = 0;
     int duration = 0;
 }
@@ -240,25 +241,11 @@ class UT_Hud_Mapper
         kVec3 cpos = ScreenPosToCamPos(z, hudX, hudY);
         kVec3 scale = ScreenScaleToWorldScale(z, hudW, hudH);
 
-        PositionHUDActor(elem, cpos, elemRot);
-        elem.Scale().Set(scale.x*fac,scale.y*fac, scale.z);
-    }
+        kVec3 vDir = cpos * climbRot_ * baseRot_;   // Vector in camera viewing direction
+        elem.SetPosition(basePos_ + vDir);  // Position element in the Turok reference frame
+        elem.Rotation() = Player.Actor().Rotation() * climbRot_ * elemRot;  // Rotate such that the plane faces the camera
+        elem.Scale().Set(scale.x*fac,scale.y*fac, scale.z); // Normalize scale by plane size
 
-
-    // OLD positioning function!
-    // TODO: Refactor all references and then move the code of this function
-    //       to PositionHudElement
-    void PositionHUDActor(kActor @actor, kVec3 camPos, kQuat rot)
-    {
-        kVec3 vDir = camPos * climbRot_ * baseRot_;
-        actor.SetPosition(basePos_ + vDir);
-        actor.Rotation() = Player.Actor().Rotation() * climbRot_ * rot;
-    }
-    // TODO: Refactor references to this function and then delete it!
-    kVec3 HudPositionToWorldPosition(kVec3 hudPosition)
-    {
-        kVec3 vDir = hudPosition * baseRot_;
-        return basePos_ + vDir;
     }
 
 }
@@ -267,17 +254,28 @@ class UT_Hud_Mapper
 // ==================
 // UT_Hud_Numberplate
 // ==================
-// Generic class to display an N-digit number
+// Generic class to display a N-digit number
 class UT_Hud_Numberplate
 {
     kStr strCOMP = "Hud::Numberplate";
 
     int nDigits_ = 0;
     array<kActor@> actors_;
+    
+    bool doHide = false;
 
     UT_Hud_Numberplate(int digits)
     {
         nDigits_ = digits;
+    }
+
+    void Show()
+    {
+        doHide = false;
+    }
+    void Hide()
+    {
+        doHide = true;
     }
 
     void Init()
@@ -307,10 +305,17 @@ class UT_Hud_Numberplate
         // Hard-coded: align left and center-y
         float DW = hudW / nDigits_;
 
-        int num = Max(0, number);
+        int num = Clip(number, 0, int(Math::Pow(10.0f, nDigits_)) - 1);
         for(int i = 0; i < nDigits_; i++)
         {
             kActor @temp = actors_[i];
+
+            if(doHide)
+            {
+                temp.RenderModel().SetVisibility(0, false);
+                continue;
+            }
+
             // hudX + DW/2 | + DW + gap | + DW + gap | ...
             // -> reversed order: (nDigits_ - 1 - i)
             float posDX = hudX + DW / 2.0f + (nDigits_ - 1 - i) * (DW + gap);
@@ -335,6 +340,7 @@ class UT_Hud_Numberplate
 }
 
 
+
 // 0: knife(0), bow(1)
 // 1: pistol (2)
 // 2: shotgun (3), autoshot (4)
@@ -344,15 +350,19 @@ class UT_Hud_Numberplate
 // 6: alien(9), missile(10)
 // 7: charge (11), fusion (12)
 // 8: chrono (13)
-const array<int> weaponSlotMapping = {0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8};
+
+// For each weapon (14 entries):
+const array<int> weaponSlotMapping = { 0, 0,   1,  2,  2,   3,   4,   4,  5,   6,  6,   7,  7,  8};
+const array<int> g_ammoType        = {-1, 0,   2,  3,  3,   2,   6,   5,  7,   6,  8,   6,  9, 10};
+const array<int> g_altAmmoType     = {-1, 1,  -1,  4,  4,  -1,  -1,  -1, -1,  -1, -1,  -1, -1, -1};
+
+// For each slot (9 entries):
 const array<int> slotWeaponMapping1 = {0, 2, 3, 5, 6, 8,  9, 11, 13};
 const array<int> slotWeaponMapping2 = {1, 2, 4, 5, 7, 8, 10, 12, 13};
 const array<int> slotStackID        = {1, 0, 2, 0, 3, 0,  4,  5,  0};
 const array<int> slotAltAmmoID      = {1, 0, 2, 0, 0, 0 , 0,  0,  0};
 
-array<int> g_maxAmmo    = {0, 30, 200, 40, 40, 200, 100, 500, 30, 100, 12, 100, 3, 3};
-array<int> g_maxAltAmmo = {0, 15,   0, 20, 20,   0,   0,   0,  0,   0,  0,   0, 0, 0};
-
+// Array sizes (dev helper)
 const int nElems_fullscreenFX = 2;
 const int nElems_weaponGFX = 9;
 const int nElems_weaponsStacked = 5;
@@ -360,6 +370,8 @@ const int nElems_weaponAmmo = 9;
 const int nElems_weaponAltAmmo = 2;
 const int nElems_healthDisp = 6;
 const int nElems_armorDisp = 5;
+const int nElems_ammoDisp = 4;
+const int nElems_spreeDisp = 3;
 
 
 // ======
@@ -372,8 +384,8 @@ class UT_Hud
     // Members
     // =======
 
-    UT_Hud_Data hud_data_;
-
+    // Plane objects
+    // -------------
     UT_Hud_Elements elems_fullscreenFX_;
     array<int> texOff_hit_damage_level(2, 0);
 
@@ -382,6 +394,8 @@ class UT_Hud
     UT_Hud_Elements elems_weaponBgStackGFX_;
     UT_Hud_Elements elems_weaponAmmoBar_;
     UT_Hud_Elements elems_weaponAltAmmoBar_;
+    
+    kActor @kstreakBar_ = null;
     kActor@ elem_bossBar_ = null;
 
     UT_Hud_Elements elems_healthDisp_;
@@ -390,28 +404,26 @@ class UT_Hud
     UT_Hud_Elements elems_armorDisp_;
     UT_Hud_Numberplate elem_num_armor_(3);
 
+    UT_Hud_Elements elems_ammoDisp_;
     UT_Hud_Numberplate elem_num_ammo_(3);
 
+    UT_Hud_Elements elems_spreeDisp_;
+
+    // Other
+    // -----
     array<UT_Hud_Timer> animationTimers_;
 
+    UT_Hud_Data hud_data_;
     UT_Hud_VideoSettings videoSettings_;
     UT_Hud_Mapper HMap_;
 
-kActor @test = null;
-kActor @test2 = null;
-
-    kActor @kstreakBar_ = null;
-
     bool isInitialized_ = false;
 
-int tmpCounter = 0;
 
     // Constructor
     // ===========
     UT_Hud()
     {
-        @test = null;
-        @test2 = null;
         @kstreakBar_ = null;
     }
 
@@ -427,26 +439,34 @@ int tmpCounter = 0;
         // ------------------
         HMap_.Init();
         videoSettings_ = HMap_.GetVideoSettings();
-
         
 
         // Init timers
         // -----------
         animationTimers_.resize(UTA_HUD_ANIM_ARRAYSIZE);
 
+        animationTimers_[UTA_HUD_ANIM_SPREE_CLOSE].isEnabled = true;
+        animationTimers_[UTA_HUD_ANIM_SPREE_CLOSE].doLoop = true;
+        animationTimers_[UTA_HUD_ANIM_SPREE_CLOSE].time = 0;
+        animationTimers_[UTA_HUD_ANIM_SPREE_CLOSE].duration = 48;
+
 
         // Create UI elements
         // ------------------
-        @test = ActorFactory.Spawn("UTA_KillSpreeStatusIcon", 0,0,0, 0, Player.Actor().SectorIndex());
-        test.Scale().Set(2*fac, 2*fac, 1.0f);
-        //test.Scale().Set(0.048f, 0.027f, 1.0f);
-        test.RenderModel().SetTexture(0, 0);
+        Init_UI_StatusBars();
+        Init_UI_FullscreenFX();
+        Init_UI_WeaponGFX();
+        Init_UI_StatusDisplay();
 
-        @test2 = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
-        //@test2 = ActorFactory.Spawn("UTA_Plane", 0,0,0, 0, Player.Actor().SectorIndex());
-        test2.Scale().Set(2*fac, 2*fac, 1.0f);
-        test2.RenderModel().SetTexture(0, 0);
+        Log(strCOMP, "Init END");
+        isInitialized_ = true;
+    }
 
+
+    // Init status bar objects
+    // -----------------------
+    void Init_UI_StatusBars()
+    {
         @kstreakBar_ = ActorFactory.Spawn("UTA_KillStreakStatusBar", 0,0,0, 0, Player.Actor().SectorIndex());
         kstreakBar_.Scale().Set(fac, fac, 1.0f);
         kstreakBar_.RenderModel().SetTexture(0, 0);
@@ -454,28 +474,17 @@ int tmpCounter = 0;
         @elem_bossBar_ = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
         elem_bossBar_.Scale().Set(fac, fac, 1.0f);
         elem_bossBar_.RenderModel().SetTexture(0, tex_offset_gfx_HudBars);
-
-        //Init_UI_Healthbar();
-        Init_UI_FullscreenFX();
-        Init_UI_WeaponGFX();
-        Init_UI_HealthDisplay();
-
-        // Init other number displays
-        elem_num_ammo_.Init();
-
-        Log(strCOMP, "Init END");
-        isInitialized_ = true;
     }
 
 
     // Healthdisplay objects
     // ---------------------
-    void Init_UI_HealthDisplay()
+    void Init_UI_StatusDisplay()
     {
         // Health number display
         elem_num_health_.Init();
 
-        // 6 different health display elements
+        // 6 health display elements
         elems_healthDisp_.Clear();
         for(int i = 0; i < nElems_healthDisp; i++)
         {
@@ -487,7 +496,7 @@ int tmpCounter = 0;
         // Armor number display
         elem_num_armor_.Init();
 
-        // 5 different armor display elements
+        // 5 armor display elements
         elems_armorDisp_.Clear();
         for(int i = 0; i < nElems_armorDisp; i++)
         {
@@ -496,7 +505,29 @@ int tmpCounter = 0;
             elems_armorDisp_.actors.insertLast(temp);
         }
 
+        // Ammo number display
+        elem_num_ammo_.Init();
+
+        // 2 ammo display elements
+        elems_ammoDisp_.Clear();
+        for(int i = 0; i < nElems_ammoDisp; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(fac, fac, 1.0f);
+            elems_ammoDisp_.actors.insertLast(temp);
+        }
+
+        // 3 killing-spree status display elements
+        elems_spreeDisp_.Clear();
+        for(int i = 0; i < nElems_spreeDisp; i++)
+        {
+            kActor @temp = ActorFactory.Spawn("UTA_Generic_Quad_Plane_GFX", 0,0,0, 0, Player.Actor().SectorIndex());
+            temp.Scale().Set(fac, fac, 1.0f);
+            elems_spreeDisp_.actors.insertLast(temp);
+        }
+
     }
+
 
     // Fullscreen objects
     // ------------------
@@ -516,6 +547,7 @@ int tmpCounter = 0;
 
         }
     }
+
 
     // Weapon graphics
     // ---------------
@@ -588,16 +620,22 @@ int tmpCounter = 0;
         animationTimers_[UTA_HUD_ANIM_DMG].isEnabled = true;
     }
 
+    void StartAnimation_FullSpree()
+    {
+        if(!(animationTimers_.length() > UTA_HUD_ANIM_SPREE_FULL)) return;
+        animationTimers_[UTA_HUD_ANIM_SPREE_FULL].time = 0;
+        animationTimers_[UTA_HUD_ANIM_SPREE_FULL].duration = 120;    // 2s
+        animationTimers_[UTA_HUD_ANIM_SPREE_FULL].isEnabled = true;
+    }
+
 
     // Destruction
     // ===========
 
     void Invalidate(bool force = false)
     {
-        if(force || test !is null)
+        if(force || kstreakBar_ !is null)
         {
-            @test = null;
-            @test2 = null;
             @kstreakBar_ = null;
 
             animationTimers_.resize(0);
@@ -610,6 +648,8 @@ int tmpCounter = 0;
             elems_weaponAltAmmoBar_.Clear();
             elems_healthDisp_.Clear();
             elems_armorDisp_.Clear();
+            elems_ammoDisp_.Clear();
+            elems_spreeDisp_.Clear();
 
             elem_num_health_.Invalidate();
             elem_num_armor_.Invalidate();
@@ -623,7 +663,7 @@ int tmpCounter = 0;
 
     void Tick()
     {
-        if(test is null)
+        if(kstreakBar_ is null)     // Use kstreakBar_ object for status check
         {
             isInitialized_ = false;
         }
@@ -634,9 +674,9 @@ int tmpCounter = 0;
             Init();
         }
 
-        if(test is null)
+        if(kstreakBar_ is null)
         {
-            Warn(strCOMP, "test is null but should not be null!");
+            Warn(strCOMP, "kstreakBar_ is null but should not be null!");
             return;
         }
 
@@ -652,35 +692,63 @@ int tmpCounter = 0;
             climbRot_ = kQuat(0, ex);
         }*/
 
-        // Update basePos_ and baseRot_ for HUD elements
+
+
+        // Compute basePos_ and baseRot_, which is the same for all HUD elements
         HMap_.PreComputeHudPosParams();
 
-        // Test
-        test.SetPosition(HMap_.HudPositionToWorldPosition(kVec3(-17, 15, -2)));
-        test.Rotation() = Player.Actor().Rotation() * generic_plane_rot;
-        
-        float z = 10.0f;
-        HMap_.PositionHudElement(test2, z, 0, 900, 200, 200, generic_plane_rot);
-        test2.RenderModel().SetTexture(0, 28);
+        // Process timers
+        UpdateAnimationTimers();
 
-        kstreakBar_.SetPosition(HMap_.HudPositionToWorldPosition(kVec3(0, 15, 4)));
-        kstreakBar_.Rotation() = Player.Actor().Rotation() * generic_plane_rot;
+        // Process hud elements
+        Update_UI_StatusBars();
+        Update_UI_FullscreenFX();
+        Update_UI_WeaponGFX();
+        Update_UI_StatusDisplay();
 
-        // ...
-        if(hud_data_.killSpree_remainder > 0)
+    }
+
+
+    // Timers
+    // ======
+    void UpdateAnimationTimers()
+    {
+        int nAnim = animationTimers_.length();   // Always use extra variables or you get frakked
+        for(int i = 0; i < nAnim; i++)
         {
-            test.RenderModel().SetTexture(0, hud_data_.killSpree_remainder);
+            animationTimers_[i].time++;
+            if(animationTimers_[i].time < animationTimers_[i].duration)
+            {
+                animationTimers_[i].isEnabled = true;
+            }
+            else
+            {
+                if(animationTimers_[i].doLoop)
+                {
+                    animationTimers_[i].time = 0;
+                }
+                else
+                {
+                    animationTimers_[i].time = animationTimers_[i].duration;
+                    animationTimers_[i].isEnabled = false;
+                }
+            }
         }
-        else
-        {
-            test.RenderModel().SetTexture(0, 0);
-        }
+    }
 
-        //test2.RenderModel().SetTexture(0, hud_data_.killSpree_count);
 
+    // Killstreak bar and boss health bar
+    // ==================================
+    void Update_UI_StatusBars()
+    {
+        float maxBarWidth = 700.0f;
+        float barHeight = 50.0f;
+
+        // Killstreak bar
+        // --------------
         if(hud_data_.killStreak_perc > 0.0)
         {
-            kstreakBar_.Scale().Set(12*fac*hud_data_.killStreak_perc, 0.5*fac, 1.0f);
+            HMap_.PositionHudElement(kstreakBar_, 1.0f, 0, 560, maxBarWidth * hud_data_.killStreak_perc, barHeight, generic_plane_rot);
             kstreakBar_.RenderModel().SetVisibility(0, true);
         }
         else
@@ -688,11 +756,19 @@ int tmpCounter = 0;
             kstreakBar_.RenderModel().SetVisibility(0, false);
         }
 
+        // Boss health bar
+        // ---------------
         if(hud_data_.isBossFight)
         {
             float bh = float(hud_data_.bossHealth);
             float bhMax = float(hud_data_.bossInitialHealth);
-            float barWidth = 500.0f * bh / bhMax;
+            if(bhMax == 0.0f)
+            {
+                Warn("bhMax="+bhMax + ", bh="+bh);
+                return;
+            }
+
+            float barWidth = maxBarWidth * bh / bhMax;
             int texOffset = 0;
             if(bh < 0.25f * bhMax)
             {
@@ -706,7 +782,7 @@ int tmpCounter = 0;
             {
                 texOffset = 1;
             }
-            HMap_.PositionHudElement(elem_bossBar_, 1.0f, 0, 500, barWidth, 45, generic_plane_rot);
+            HMap_.PositionHudElement(elem_bossBar_, 1.0f, 0, 500, barWidth, barHeight, generic_plane_rot);
             elem_bossBar_.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + texOffset);
             elem_bossBar_.RenderModel().SetVisibility(0, true);
         }
@@ -715,36 +791,10 @@ int tmpCounter = 0;
             elem_bossBar_.RenderModel().SetVisibility(0, false);
         }
 
-        UpdateAnimationTimers();
-
-        //Update_UI_Healthbar();
-        Update_UI_FullscreenFX();
-        Update_UI_WeaponGFX();
-        Update_UI_Numbers();
-        Update_UI_HealthDisp();
-
     }
 
 
-    void UpdateAnimationTimers()
-    {
-        int nAnim = animationTimers_.length();   // Always use extra variables or you get frakked
-        for(int i = 0; i < nAnim; i++)
-        {
-            animationTimers_[i].time += 1;
-            if(animationTimers_[i].time < animationTimers_[i].duration)
-            {
-                animationTimers_[i].isEnabled = true;
-            }
-            else
-            {
-                animationTimers_[i].time = animationTimers_[i].duration;
-                animationTimers_[i].isEnabled = false;
-            }
-        }
-    }
-
-    void Update_UI_HealthDisp()
+    void Update_UI_StatusDisplay()
     {
         if(elems_healthDisp_.actors.length() != nElems_healthDisp)
         {
@@ -754,6 +804,16 @@ int tmpCounter = 0;
         if(elems_armorDisp_.actors.length() != nElems_armorDisp)
         {
             Warn(strCOMP, "Unexpected elems_armorDisp_ array size");
+            return;
+        }
+        if(elems_ammoDisp_.actors.length() != nElems_ammoDisp)
+        {
+            Warn(strCOMP, "Unexpected elems_ammoDisp_ array size");
+            return;
+        }
+        if(elems_spreeDisp_.actors.length() != nElems_spreeDisp)
+        {
+            Warn(strCOMP, "Unexpected elems_spreeDisp_ array size");
             return;
         }
         
@@ -783,15 +843,18 @@ int tmpCounter = 0;
         float bgElemW = ImGap + ImW + ImGap + NumW + ImGap;
         float posXBg = posX0 + bgElemW / 2.0f;
 
+        // Element shift distances
+        float bgShiftX = bgElemW * 1.1f;
+        float bgShiftY = bgElemH * 1.1f;
+
         // Bars
-        float maxHealth = float(hud_data_.health_max);
-        float maxArmor = float(hud_data_.armor_max);
         float barMaxW = NumW;
         float barW = barMaxW;   // to be overridden
         float barH = NumH / 4.0f;
         float barPosX0 = posXNm;
         float barPosY0 = posY0 - bgElemH / 2.0f + barH * 2.0f;
         float barPosX = barPosX0;   // to be overridden
+
 
         // Health display
         // ==============
@@ -811,8 +874,15 @@ int tmpCounter = 0;
                                                 posXNm, posY0, 
                                                 NumW, NumH, HMap_);
 
+        // Preperations for bar display
+        int curHealth = hud_data_.health;
+        int healHealth = hud_data_.health_heal;
+        int maxHealHealth = hud_data_.health_max;
+        maxHealHealth = Max(curHealth, maxHealHealth); // Manipulate maxHealHealth in case the actual health exceeds the limit
+        float maxHealHealthF = float(maxHealHealth);
+
         // [2] Green health bar (current health)
-        barW = barMaxW * float(Clip(hud_data_.health, 0, hud_data_.health_max)) / maxHealth;
+        barW = barMaxW * float(Clip(curHealth, 0, maxHealHealth)) / maxHealHealthF;
         barPosX = barPosX0 + barW / 2.0f;
         @temp = elems_healthDisp_.actors[2];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -821,7 +891,7 @@ int tmpCounter = 0;
         temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars);
 
         // [3] Yellow health bar (0-60 health)
-        barW = barMaxW * 60.0f / maxHealth;
+        barW = barMaxW * 60.0f / maxHealHealthF;
         barPosX = barPosX0 + barW / 2.0f;
         @temp = elems_healthDisp_.actors[3];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -831,7 +901,7 @@ int tmpCounter = 0;
 
         // [4] Orange health bar (60-heal health)
         barPosX += barW / 2.0f;
-        barW = barMaxW * (float(hud_data_.health_heal) - 60.0f) / maxHealth;
+        barW = barMaxW * (float(healHealth) - 60.0f) / maxHealHealthF;
         barPosX += barW / 2.0f;
         @temp = elems_healthDisp_.actors[4];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -841,7 +911,7 @@ int tmpCounter = 0;
 
         // [5] Red health bar (heal-max health)
         barPosX += barW / 2.0f;
-        barW = barMaxW * (float(hud_data_.health_max) - float(hud_data_.health_heal)) / maxHealth;
+        barW = barMaxW * (float(maxHealHealth) - float(healHealth)) / maxHealHealthF;
         barPosX += barW / 2.0f;
         @temp = elems_healthDisp_.actors[5];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -855,7 +925,7 @@ int tmpCounter = 0;
         // =============
 
         // Shift stuff upwards
-        posY0 += bgElemH * 1.1f;
+        posY0 += bgShiftY;
         barPosY0 = posY0 - bgElemH / 2.0f + barH * 2.0f;
 
         // [0] Background image
@@ -873,8 +943,16 @@ int tmpCounter = 0;
                                                 posXNm, posY0, 
                                                 NumW, NumH, HMap_);
 
+        // Preperations for bar display
+        int curArmor = hud_data_.armor;
+        int healArmor = hud_data_.armor_heal;
+        int maxHealArmor = hud_data_.armor_max;
+        maxHealArmor = Max(curArmor, maxHealArmor); // Manipulate maxHealArmor in case the actual armor exceeds the limit
+        float maxHealArmorF = float(maxHealArmor);
+        
+
         // [2] Yellow armor bar (current armor)
-        barW = barMaxW * float(Clip(hud_data_.armor, 0, hud_data_.armor_max)) / maxArmor;
+        barW = barMaxW * float(Clip(curArmor, 0, maxHealArmor)) / maxHealArmorF;
         barPosX = barPosX0 + barW / 2.0f;
         @temp = elems_armorDisp_.actors[2];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -882,8 +960,8 @@ int tmpCounter = 0;
                                 barW, barH, generic_plane_rot);
         temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 1);
 
-        // [3] Orange health bar (0-heal armor)
-        barW = barMaxW * float(hud_data_.armor_heal) / maxArmor;
+        // [3] Orange armor bar (0-heal armor)
+        barW = barMaxW * float(healArmor) / maxHealArmorF;
         barPosX = barPosX0 + barW / 2.0f;
         @temp = elems_armorDisp_.actors[3];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -893,7 +971,7 @@ int tmpCounter = 0;
 
         // [4] Red armor bar (heal-max armor)
         barPosX += barW / 2.0f;
-        barW = barMaxW * (float(hud_data_.armor_max) - float(hud_data_.armor_heal)) / maxArmor;
+        barW = barMaxW * (maxHealArmorF - float(healArmor)) / maxHealArmorF;
         barPosX += barW / 2.0f;
         @temp = elems_armorDisp_.actors[4];
         HMap_.PositionHudElement(temp, pz_nm, 
@@ -901,28 +979,163 @@ int tmpCounter = 0;
                                 barW, barH, generic_plane_rot);
         temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 3);
 
-    }
 
-    void Update_UI_Numbers()
-    {
 
-        elem_num_armor_.Update(hud_data_.armor, -10.0f, 1.0f, 
-                                                -550.0f, -500.0f, 
-                                                120.0f, 40.0f, HMap_);
+        // Ammo display
+        // ============
 
-        int ammo = Player.GetAmmo(Player.CurrentWeapon());
-        int altAmmo = Player.GetAltAmmo(Player.CurrentWeapon());
-        if(altAmmo > 0)
+        int curWpIdx = Player.CurrentWeapon();
+        UTAddOn::Turok::WeaponInfo wpInfo = UTAddOn::Turok::GetWeaponInfo(curWpIdx);
+        int ammoType = g_ammoType[curWpIdx];
+        int altAmmoType = g_altAmmoType[curWpIdx];
+        
+        bool isKnife = (curWpIdx == 0);
+
+        // Shift stuff rightwards and back downwards
+        posXBg += bgShiftX;
+        posXIm += bgShiftX;
+        posXNm += bgShiftX;
+        posY0 -= bgShiftY;
+
+        // [0] Background image
+        @temp = elems_ammoDisp_.actors[0];
+        HMap_.PositionHudElement(temp, pz_bg, posXBg, posY0, bgElemW, bgElemH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudElements);
+
+        // [1] Ammo type image
+        @temp = elems_ammoDisp_.actors[1];
+        if(!isKnife)
         {
-            ammo = altAmmo;
+            int texOff = ammoType;
+            if(wpInfo.ownsAltAmmo)
+            {
+                texOff = altAmmoType;
+            }
+            if(texOff < 0)
+            {
+                Warn(strCOMP, "Internal ERROR: Invalid texOff: " + texOff);
+            }
+            HMap_.PositionHudElement(temp, pz_nm, posXIm, posY0, ImW, ImH, generic_plane_rot);
+            temp.RenderModel().SetTexture(0, tex_offset_gfx_Ammo + texOff);
+            temp.RenderModel().SetVisibility(0, true);
         }
-        elem_num_ammo_.Update(ammo, -10.0f, 1.0f, 
-                                    -550.0f, -600.0f, 
-                                    120.0f, 40.0f, HMap_);
+        else
+        {
+            temp.RenderModel().SetVisibility(0, false);
+        }
+
+        // [-] Ammo number display
+        int ammo = wpInfo.ammo;
+        if(wpInfo.ownsAltAmmo)
+        {
+            ammo = wpInfo.altAmmo;
+        }
+        elem_num_ammo_.Update(ammo, -10.0f, pz_nm, 
+                                            posXNm, posY0, 
+                                            NumW, NumH, HMap_);
+
+        // [2] Ammo bar
+        float barWidth = (bgElemW - ImW) * 0.90f * wpInfo.pcAmmo;
+        float barHeight =  bgElemH * 0.15f;
+        float posBX = posXIm + (ImW  + barWidth) / 2.0f;
+        float posBY = posY0 - bgElemH * 0.45f;
+        if(wpInfo.altAmmo > 0) 
+        {
+            barHeight /= 2.0f;
+            posBY -= barHeight / 2.0f;
+        }
+        @temp = elems_ammoDisp_.actors[2];
+        HMap_.PositionHudElement(temp, pz_nm, posBX, posBY, barWidth, barHeight, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 1);   // yellow
+        temp.RenderModel().SetVisibility(0, wpInfo.ownsAmmo);
+
+        // [3] Alt Ammo bar
+        barWidth = (bgElemW - ImW) * 0.90f * wpInfo.pcAltAmmo;
+        barHeight =  bgElemH * 0.15f;
+        posBX = posXIm + (ImW  + barWidth) / 2.0f;
+        posBY = posY0 - bgElemH * 0.45f;
+        if(wpInfo.ammo > 0) 
+        {
+            barHeight /= 2.0f;
+            posBY += barHeight / 2.0f;
+        }
+        @temp = elems_ammoDisp_.actors[3];
+        HMap_.PositionHudElement(temp, pz_nm, posBX, posBY, barWidth, barHeight, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 3);   // red
+        temp.RenderModel().SetVisibility(0, wpInfo.ownsAltAmmo);
+
+
+        // Killing-Spree status display
+        // ============================
+        
+        float SPImW = bgElemW * 0.8f;
+        float SPImH = SPImW / 2.0f * videoSettings_.ratio_W_H;
+        float SPImShiftX = bgElemW * 0.1f;
+
+        // Shift stuff upwards twice and leftwards once
+        posXBg -= bgShiftX;
+        posY0 += bgShiftY + bgShiftY;
+
+        // [0] Background image
+        @temp = elems_spreeDisp_.actors[0];
+        HMap_.PositionHudElement(temp, pz_bg, posXBg, posY0, bgElemW, bgElemH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, tex_offset_gfx_HudElements);
+
+        // [1] Spree status 1 (0-4)
+        int texOffSP1;
+        int curSpree1 = Clip(hud_data_.killSpree_remainder, 0, 4);
+        if((hud_data_.killSpree_count == 5) && animationTimers_[UTA_HUD_ANIM_SPREE_CLOSE].isEnabled)
+        {
+            int curTime = animationTimers_[UTA_HUD_ANIM_SPREE_CLOSE].time;
+            int dispDur = 24 / (curSpree1 + 1);
+            bool itsOn = ( (curTime / dispDur) % 2 == 0 );
+            if(itsOn)
+            {
+                texOffSP1 = tex_offset_gfx_Spree + curSpree1;   // current
+            }
+            else
+            {
+                texOffSP1 = tex_offset_gfx_Spree;    // off
+            }
+        }
+        else
+        {
+            texOffSP1 = tex_offset_gfx_Spree + curSpree1;
+        }
+        @temp = elems_spreeDisp_.actors[1];
+        HMap_.PositionHudElement(temp, pz_nm, posXBg - SPImShiftX, posY0, SPImW, SPImH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, texOffSP1);
+
+        // [2] Spree status 2 (0-6)
+        int texOffSP2;
+        if(animationTimers_[UTA_HUD_ANIM_SPREE_FULL].isEnabled)
+        {
+            int curTime = animationTimers_[UTA_HUD_ANIM_SPREE_FULL].time;
+            int dispDur = 6;
+            bool itsOn = ( (curTime / dispDur) % 2 == 0 );
+            if(itsOn)
+            {
+                texOffSP2 = tex_offset_gfx_Spree + 11;   // full
+            }
+            else
+            {
+                texOffSP2 = tex_offset_gfx_Spree + 5;    // off
+            }
+        }
+        else 
+        {
+            texOffSP2 = tex_offset_gfx_Spree + 5 + Clip(hud_data_.killSpree_count, 0, 6);
+        }
+        @temp = elems_spreeDisp_.actors[2];
+        HMap_.PositionHudElement(temp, pz_nm, posXBg + SPImShiftX, posY0, SPImW, SPImH, generic_plane_rot);
+        temp.RenderModel().SetTexture(0, texOffSP2);
+
 
     }
 
 
+    // Weapon slots and ammo display
+    // =============================
     void Update_UI_WeaponGFX()
     {
         if(elems_weaponGFX_.actors.length() != nElems_weaponGFX)
@@ -1104,8 +1317,8 @@ int tmpCounter = 0;
             temp.RenderModel().SetTexture(0, idxWpTex);
 
 
-            // Position ammo bar element
-            // -------------------------
+            // Position ammo bar element(s)
+            // ----------------------------
             int ammo = Player.GetAmmo(idxWp);
             int altAmmo = Player.GetAltAmmo(idxWp);
 
@@ -1122,12 +1335,12 @@ int tmpCounter = 0;
             {
                 if(altAmmo > 0)
                 {
-                    if(altAmmo > g_maxAltAmmo[idxWp])
+                    if(altAmmo > UTAddOn::Turok::g_maxAltAmmo[idxWp])
                     {
-                        g_maxAltAmmo[idxWp] = altAmmo;
+                        UTAddOn::Turok::g_maxAltAmmo[idxWp] = altAmmo;
                         Log("Max alt ammo for weapon " + idxWp + " has been increased to " + altAmmo);
                     }
-                    int altAmmoBarMax = g_maxAltAmmo[idxWp];
+                    int altAmmoBarMax = UTAddOn::Turok::g_maxAltAmmo[idxWp];
                     tempAltBar.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 3);   // red
                     tempAltBar.RenderModel().SetVisibility(0, true);
 
@@ -1151,12 +1364,12 @@ int tmpCounter = 0;
 
             if(ammo > 0)
             {
-                if(ammo > g_maxAmmo[idxWp])
+                if(ammo > UTAddOn::Turok::g_maxAmmo[idxWp])
                 {
-                    g_maxAmmo[idxWp] = ammo;
+                    UTAddOn::Turok::g_maxAmmo[idxWp] = ammo;
                     Log("Max ammo for weapon " + idxWp + " has been increased to " + ammo);
                 }
-                int ammoBarMax = g_maxAmmo[idxWp];
+                int ammoBarMax = UTAddOn::Turok::g_maxAmmo[idxWp];
                 tempBar.RenderModel().SetTexture(0, tex_offset_gfx_HudBars + 1);   // yellow
                 tempBar.RenderModel().SetVisibility(0, true);
 
@@ -1185,6 +1398,8 @@ int tmpCounter = 0;
     }
 
 
+    // Fullscreen effects
+    // ==================
     void Update_UI_FullscreenFX()
     {
         if(elems_fullscreenFX_.actors.length() != nElems_fullscreenFX)

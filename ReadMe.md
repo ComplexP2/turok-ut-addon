@@ -20,6 +20,12 @@ Since to date no upgrade to Kex4 is planned, the game must be reverted to the la
 
 Feel free to create a Kex4 compatible version, if you are interested.
 
+### ⚠️ Important note about sounds ⚠️
+
+UT-AddOn is supposed to play certain UnrealTournament sound files (that's the whole idea), but the sound files are not included in this repository and must be added manually! 
+
+➡️ See [_Info.md](UTAddOn/sounds/waves/_Info.md) for more details.
+
 ### How to play the game with this mod
 
 1. Buy the game on [Steam](https://store.steampowered.com/app/405820/Turok/)

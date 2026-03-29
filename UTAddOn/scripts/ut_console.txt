@@ -81,6 +81,7 @@ void Help()
     Print("  call UTAddOn::Dev::DisableDamage");
     Print("  call UTAddOn::Dev::EnableLog");
     Print("  call UTAddOn::Dev::DisableLog");
+    Print("  call UTAddOn::Dev::SpawnDoofy");
 }
 
 void EnableDamage()
@@ -130,6 +131,7 @@ void Off()
     // Sounds and fx only
     ChangeDifficultySetting(UTA_DIFF_OFF);
     Info("Changed difficulty to: OFF");
+    Info(" - Streak duration: 2.5s");
     Info(" - No continuous damage");
     Info(" - No healing");
     Info(" - No achievements");
@@ -139,8 +141,9 @@ void Baby()
 {
     ChangeDifficultySetting(UTA_DIFF_BABY);
     Info("Changed difficulty to: BABY");
+    Info(" - Streak duration: 3.5s");
     Info(" - No continuous damage");
-    Info(" - Full healing");
+    Info(" - Armor healing");
     Info(" - Unlimited healing rate");
     Info(" - All achievements");
 }
@@ -148,17 +151,19 @@ void Easy()
 {
     ChangeDifficultySetting(UTA_DIFF_EASY);
     Info("Changed difficulty to: EASY");
+    Info(" - Streak duration: 3.0s");
     Info(" - Continuous damage");
-    Info(" - Full healing");
-    Info(" - Healing rate limited to 10 HP/s");
+    Info(" - Armor healing");
+    Info(" - Healing rate is limited to 10 HP/s");
     Info(" - All achievements");
 }
 void Normal()
 {
     ChangeDifficultySetting(UTA_DIFF_NORMAL);
     Info("Changed difficulty to: NORMAL");
+    Info(" - Streak duration: 2.5s");
     Info(" - Continuous damage");
-    Info(" - Healing rate limited to 5 HP/s");
+    Info(" - Healing rate is limited to 5 HP/s");
     Info(" - No armor healing");
     Info(" - All achievements");
 }
@@ -166,15 +171,17 @@ void Hard()
 {
     ChangeDifficultySetting(UTA_DIFF_HARD);
     Info("Changed difficulty to: HARD");
-    Info(" - Continuous damage");
-    Info(" - No healing");
+    Info(" - Streak duration: 2.5s");
+    Info(" - Continuous damage is never interrupted");
+    Info(" - Healing rate is limited to 3 HP/s");
     Info(" - All achievements");
 }
 void Hardcore()
 {
     ChangeDifficultySetting(UTA_DIFF_HARDCORE);
     Info("Changed difficulty to: HARDCORE");
-    Info(" - Continuous damage");
+    Info(" - Streak duration: 2.5s");
+    Info(" - Continuous damage is never interrupted");
     Info(" - No healing");
     Info(" - No achievements");
 }

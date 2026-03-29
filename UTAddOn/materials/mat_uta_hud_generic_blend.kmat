@@ -6,7 +6,7 @@ material surf_12_1234Y {
     sort default
     color_diffuse "1.000000 1.000000 1.000000 0.625000"
 
-    sampler "diffuse" 0 "UTAddOn/textures/tex_black.png" {
+    sampler "diffuse" 0 "UTAddOn/textures/hud/tex_ArmorEffect1.png" {
         filter      linear
         wrap        repeat
     }

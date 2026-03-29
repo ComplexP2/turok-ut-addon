@@ -1,3 +1,3 @@
-tar.exe -a -cf "TurokUTAddOn.zip" -C "." "UTAddOn\*" -C "." "scripts\*" -C "." "defs\*" -C "." "models\*" "ReadMe.md" "LICENSE"
-move TurokUTAddOn.zip ../TurokUTAddOn.kpf
+REM Executing this script automates packing the mod files to a kpf and starting the game
+call pack.bat
 Start "" "../../sobek.exe"

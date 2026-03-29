@@ -1,4 +1,4 @@
-UTA_Test 21222
+Human_Grunt_Soldier_Test 21222
 {
     classname                   "kexAI"
     gravity                     0.5
@@ -31,14 +31,11 @@ UTA_Test 21222
     scriptClass                 "TurokGrunt"
     defaultEditorModel          "models/dyn_human_grunt01.bin"
     defaultEditorAnim           "anims/dyn_human_grunt01_anim.bin"
-	
+    
     initialModel                "models/dyn_human_grunt01.bin"
     initialAnim                 "anims/dyn_human_grunt01_anim.bin"
-	
-	spawnFlags1					524288
-	spawnFlags2					0
-	spawnFlags3					0
-
+    
+    spawnFlags1					524288
 }
 
 UTA_LifeForce_2_Silent 24382
@@ -50,46 +47,6 @@ UTA_LifeForce_2_Silent 24382
     stepHeight                  25.72
     pickup.lifeforce.amount     2
     initialModel                "models/lifeforce_1.bin"
-}
-
-UTA_Plane 21224
-{
-	classname               	"kexActor"
-    flags.noMovement        	1
-	flags.alignToFloor          0
-    flags.noBlood               1
-    flags.allowTinyEnemyCheat   0
-    clipFlag.edges              0
-    clipFlag.dropOff            0
-    clipFlag.noExitWater        0
-    clipFlag.noStepDown         1
-    clipFlag.collideHeight      0
-    clipFlag.greaseSlideObjects 0
-    defaultEditorModel      "UTAddOn/models/uta_hud_plane.bin"
-    defaultEditorAnim       ""
-	
-	initialModel            "UTAddOn/models/uta_hud_plane.bin"
-    initialAnim             ""
-}
-
-UTA_KillSpreeStatusIcon 23571
-{
-	classname               	"kexActor"
-    flags.noMovement        	1
-	flags.alignToFloor          0
-    flags.noBlood               1
-    flags.allowTinyEnemyCheat   0
-    clipFlag.edges              0
-    clipFlag.dropOff            0
-    clipFlag.noExitWater        0
-    clipFlag.noStepDown         1
-    clipFlag.collideHeight      0
-    clipFlag.greaseSlideObjects 0
-    defaultEditorModel      "UTAddOn/models/uta_hud_killspree.bin"
-    defaultEditorAnim       ""
-	
-	initialModel            "UTAddOn/models/uta_hud_killspree.bin"
-    initialAnim             ""
 }
 
 UTA_KillStreakStatusBar 23572
@@ -109,26 +66,6 @@ UTA_KillStreakStatusBar 23572
     defaultEditorAnim       ""
 	
 	initialModel            "UTAddOn/models/uta_hud_killstreak_bar.bin"
-    initialAnim             ""
-}
-
-UTA_Generic_Quad_Plane 23573
-{
-	classname               	"kexActor"
-    flags.noMovement        	1
-	flags.alignToFloor          0
-    flags.noBlood               1
-    flags.allowTinyEnemyCheat   0
-    clipFlag.edges              0
-    clipFlag.dropOff            0
-    clipFlag.noExitWater        0
-    clipFlag.noStepDown         1
-    clipFlag.collideHeight      0
-    clipFlag.greaseSlideObjects 0
-    defaultEditorModel      "UTAddOn/models/uta_hud_generic_quad_plane.bin"
-    defaultEditorAnim       ""
-	
-	initialModel            "UTAddOn/models/uta_hud_generic_quad_plane.bin"
     initialAnim             ""
 }
 

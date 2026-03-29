@@ -1,0 +1,30 @@
+#include "scripts/common.txt"
+
+#include "UTAddOn/scripts/ut_helper.txt"
+
+namespace UTAddOn
+{
+namespace Dev
+{
+
+void SpawnDoofy()
+{
+
+    Warn("Spawning now ...");
+    kVec3 v = Player.Actor().Origin();
+    kActor @actor = ActorFactory.Spawn("Human_Grunt_Soldier_Test", v.x, v.y, v.z, 0.0f, Player.Actor().SectorIndex());
+    actor.Scale().Set(0.5f, 0.5f, 0.5f);
+    //AF_STATIONARY | AF_WOUNDEDMORTALLY
+    //actor.Flags() |= (AF_ALWAYSACTIVE | AF_CASTSHADOW | AF_SOLID);
+    //actor.Flags() &= ~(AF_NONSHOOTABLE|AF_INVINCIBLE);
+    actor.Flags() = 524288;//1073889280;
+    Log("Actor flags: " + actor.Flags());
+    //actor.ModelVariation() = Math::RandMax(GV_DEMON_LORD + 1);
+    //SetGruntTextures(actor);
+    // =======
+
+}
+
+}   // NS: Dev
+
+}   // NS: UTAddOn

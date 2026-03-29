@@ -2,7 +2,7 @@
 namespace UTAddOn
 {
 
-bool g_enableLog = true;
+bool g_enableLog = false;
 
 // ============
 // Unit vectors
@@ -40,6 +40,13 @@ void Info(kStr str)
 void InfoW(kStr str)
 {
     Sys.Warning("UTAddOn: " + str + "\n");
+}
+void PrintVersion()
+{
+    int minor1 = Version % 10;
+    int minor2 = ((Version - minor1) % 100) / 10;
+    int major = ((Version - minor2 * 10 - minor1) % 1000) / 100;
+    Info("Version: " + major + "." + minor2 + "" + minor1);
 }
 
 // ==================
@@ -172,5 +179,44 @@ kQuat Inverse(kQuat q)
     float s = Math::Sin(th);
     return kQuat(2.0f * th, -q.x * s, -q.y * s, -q.z * s);
 }
+
+
+// ==============
+// Game Variables
+// ==============
+void SetGV(kStr nameGV, int valueGV) 
+{
+
+    if(!GameVariables.HasKey(nameGV))
+    {
+        GameVariables.Add(nameGV, "" + valueGV);
+    }
+    else
+    {
+        GameVariables.SetValue(nameGV, "" + valueGV);
+    }
+
+}
+
+void GetGV(kStr nameGV, int &out valueGV, int defaultGV)
+{
+
+    if(!GameVariables.HasKey(nameGV))
+    {
+        GameVariables.Add(nameGV, "" + defaultGV);
+    }
+    int value;
+
+    // Don't use variables in place of the third parameter! It will frak up ...
+    if(!GameVariables.GetInt(nameGV, value, 0))
+    {
+        // Assign default value manually
+        value = defaultGV;
+    }
+    valueGV = value;
+
+}
+
+
 
 }   // NS: UTAddOn

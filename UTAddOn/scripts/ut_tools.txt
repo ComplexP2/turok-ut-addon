@@ -73,6 +73,15 @@ class UT_Queue_int
         return data.length();
     }
 
+    array<int> GetArray() 
+    {
+        return data;
+    }
+    void SetArray(array<int> dataOvrd)
+    {
+        data = dataOvrd;
+    }
+
     void Push(int newElem, bool unique = false, bool asNext = false)
     {
         // Don't add if entry already exists
@@ -124,11 +133,11 @@ class UT_Queue_int
 // ==================
 // UT_Array_TempActor
 // ==================
-
 class UT_TemporaryActor
 {
     kActor @actorRef = null;
     float lifeTime_s = 0;
+    int despawnFxId = 0;
 }
 
 class UT_Array_TempActor
@@ -163,30 +172,26 @@ class UT_Array_TempActor
     {
         kActor @actor = data[index].actorRef;
 
-        Warn("DropItem Begin -----");
         if(!(actor is null) && !actor.IsStale())
         {
             if(actor.Type() >= 400 && actor.Type() <= 404)
             {
                 // Spawn "despawn" FX effect at item location and remove it
-                kVec3 spawnPos = actor.Origin() + kVec3(0,0,actor.Height()/2.0);
-                Warn("Spawning despawn-FX at position: " + Str(spawnPos));
+                if(data[index].despawnFxId == 1)
+                {
+                    kVec3 spawnPos = actor.Origin() + kVec3(0,0,actor.Height()/2.0);
+                    Game.SpawnFx("fx/generic_260.kfx", spawnPos, actor.SectorIndex());
+                }
 
-                Game.SpawnFx("fx/generic_260.kfx", spawnPos, actor.SectorIndex());
-
-                Warn("Dropping item at index: " + index + " (" + Size() + " items total)");
+                // Remove corresponding actor
                 data[index].actorRef.Remove();
             }
-            else
-            {
-                Warn("Actor type is strange: " + actor.Type());
-            }
+            
         }
-        Warn("Setting null at index: " + index);
+
+        // Invalidate actorRef and remove array entry
         @data[index].actorRef = null;
-        Warn("Removing at index: " + index);
         data.removeAt(index);
-        Warn("DropItem DONE =====");
     }
 
     void Update(float deltaTime)
